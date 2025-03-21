@@ -1,0 +1,594 @@
+/* Global Styles */
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f5f5f5;
+    color: #333;
+    padding-top:60px;
+}
+html, body {
+    height: 100%;
+}
+main {
+    flex-grow: 1;
+    min-height: calc(100vh - 100px); /* Adjust based on footer height */
+}
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  
+  /* Navbar styling */
+  .navbar {
+    background-color:#f3f1eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+  }
+  
+  /* Navigation links styling */
+  .nav-links {
+    display: flex;
+    list-style: none;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+    color: #e3e0e0;
+  }
+  
+  /* Navigation link styles */
+  .nav-links a {
+    text-decoration: none;
+    color: #908d8d;  /* Default text color */
+    font-size: 16px;
+    font-weight: 500;
+    transition: color 0.3s ease, transform 0.2s ease; /* Smooth transition */
+  }
+  
+  /* Hover effect */
+  .nav-links a:hover {
+    color: #2c2c2a;  
+    transform: scale(1.1); 
+  }
+    .nav-links a:active {
+    color: #252222; /* Change color when clicked */
+  }
+
+/* Header Section */
+header {
+    background-color: #f6f1f1;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed; /* Make the header fixed */
+    top: 0; /* Stick to the top */
+    left: 0; /* Stick to the left */
+    width: 100%; /* Span the full width */
+    z-index: 1000; /* Ensure it stays above other content */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
+}
+
+.nav-links {
+    flex-grow: 1; /* Allows it to take available space */
+}
+.donate-btn {
+    background: #a91e0e;
+    margin-left:15px;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+.donate-btn:hover {
+    margin-left:15px;
+    background: rgba(212, 58, 34, 0.967); /* Darker shade for hover effect */
+    transform: scale(1.01); /* Slightly enlarge on hover */
+}
+
+.get-support-btn {
+    background: rgba(240, 78, 48, 0.6); /* Semi-transparent color for glass effect */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.get-support-btn:hover {
+    background: rgba(212, 59, 34, 0.6); /* Darker shade for hover effect */
+    transform: scale(1.05); /* Slightly enlarge on hover */
+}
+
+/* Hero Section */
+.hero {
+    background: url('help.jpeg') center/cover no-repeat;
+    color: #fff;
+    text-align: center;
+    padding: 100px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.hero-content {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    padding: 30px;
+    border-radius: 10px;
+    max-width: 600px;
+}
+
+.hero-content h1 {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 400;
+}
+
+/* Info Section */
+#info {
+    display: flex;
+    justify-content: space-around;
+    padding: 40px;
+    background-color: #4442c9;
+    color: #fff;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+#info div {
+    text-align: center;
+    flex: 1;
+    margin: 10px;
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+#info h2 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+#info p {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: 400;
+}
+
+.apply-btn {
+    background-color: #f04e30;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.3s ease;
+}
+
+.apply-btn:hover {
+    background-color: #d43b22;
+}
+
+/* Footer Section */
+footer {
+    text-align: center;
+    padding: 15px;
+    background-color: #171818;
+    color: #fff;
+    font-size: 1rem;
+}
+
+/* Volunteer Page */
+.volunteer-page, .volunteer-signup-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px;
+    overflow: hidden;
+}
+
+/* Background image with blur effect */
+.volunteer-page::before, 
+.volunteer-signup-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('helpp.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    filter: blur(5px); /* Blur effect only on the background */
+    z-index: -1; /* Ensures it stays behind the content */
+}
+
+/* Container for text and form (should NOT be blurred) */
+.volunteer-container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.3); /* Semi-transparent background */
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1; /* Ensures it appears above the blurred background */
+}
+
+/* Text and headings */
+.volunteer-page h2, .volunteer-signup-page h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #001d65;
+}
+
+.volunteer-page p, .volunteer-signup-page p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 400;
+    color: #333;
+}
+
+
+ .signup-btn,.login-btn, .volunteer-signup-page button {
+    background: rgba(72, 103, 179, 0.6); /* Semi-transparent color for glass effect */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    margin: 10px;
+    display: inline-block;
+}
+
+.volunteer-page .signup-btn:hover, .volunteer-page .login-btn:hover, .volunteer-signup-page button:hover {
+    background: rgba(237, 239, 243, 0.6); /* Darker shade for hover effect */
+    transform: scale(1.05);
+}
+
+
+.volunteer-signup-page form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.volunteer-signup-page input, .volunteer-signup-page textarea {
+    width: 100%;
+    max-width: 400px;
+    padding: 12px;
+    color:#000000;
+    border: 2px solid #323030;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.volunteer-signup-page button {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background: rgba(72, 103, 179, 0.6);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.volunteer-signup-page button:hover {
+    background: rgba(48, 80, 160, 0.6);
+    transform: scale(1.05);
+}
+/* Donor Pages */
+.donorLogin-page, .donorSignup-page, .donation-page {
+    position: relative;
+    padding: 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.donorLogin-page::before, 
+.donorSignup-page::before, 
+.donation-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('clean.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    filter: blur(8px); /* Adjust blur intensity */
+    z-index: -1;
+}
+
+
+.donorLogin-page h2, .donorSignup-page h2, .donation-page h2 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #f7f7f7; 
+}
+
+.donorLogin-page h3, .donorSignup-page h3, .donation-page p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    font-weight: 400;
+    color: #f6f4f4fb;
+}
+
+.login-container, .signup-container {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-container input, .signup-container input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.login-container button, .signup-container button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    background: #b34848;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.login-container button:hover, .signup-container button:hover {
+    background: #a03030;
+    transform: scale(1.05);
+}
+
+.login-container a, .signup-container a {
+    color: #b34848;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-container a:hover, .signup-container a:hover {
+    text-decoration: underline;
+}
+
+/* Contact Page */
+.contact-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* Banner */
+.contact-banner {
+    background: url('banner-image.jpeg') no-repeat center center/cover;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 2rem;
+    padding: 60px;
+    font-weight: bold;
+}
+
+/* Main Container */
+.contact-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 50px;
+    padding: 40px;
+    width: 90%;
+}
+
+/* Contact Form */
+.contact-form {
+    flex: 1;
+    max-width: 500px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+.contact-form textarea {
+    height: 100px;
+}
+
+.contact-form button {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: white;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+.contact-form button:hover {
+    background: #218838;
+}
+
+/* reCAPTCHA */
+.recaptcha-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Contact Info */
+.contact-info {
+    flex: 1;
+    max-width: 300px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 5px;
+}
+
+.contact-info h2 {
+    font-size: 1.5rem;
+}
+
+.contact-info hr {
+    margin: 10px 0;
+    border: 1px solid black;
+}
+.donation-page {
+    background: url('clean.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    text-align: center;
+    padding: 40px;
+}
+.donation-form-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap:30px;
+    margin-bottom:40px;
+}
+
+.donation-form-section input,
+.donation-form-section select {
+  width: calc(50% - 10px); /* Two inputs per row */
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(51, 47, 47, 0.286);
+  color: rgb(241, 236, 236);
+  outline: none;
+}
+input::placeholder{
+    color: rgba(26, 25, 25, 0.6);
+}
+#donationForm {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1); /* Semi-transparent */
+    backdrop-filter: blur(12px); /* Frosted Glass Effect */
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+  #submit {
+    background: linear-gradient(135deg, #ff7eb3, #ff758c);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 0px 4px 10px rgba(255, 117, 140, 0.3);
+  }
+  
+  #submit:hover {
+    background: linear-gradient(135deg, #e82142, #ff7eb3);
+    transform: scale(1.05);
+  }
+  
+  .logout-btn {
+    background: transparent;
+    color: #f7f2f3;
+    font-size: 14px;
+    font-weight: bold;
+    border: 2px solid #fefafb;
+    padding: 10px 18px;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .logout-btn:hover {
+    background: #dc1313;
+    transform: scale(1.05);
+  }
+  
+  h3#address {
+    color: #f5e6e6;
+    font-size: 20px;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 15px;
+  }

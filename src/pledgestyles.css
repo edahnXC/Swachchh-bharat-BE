@@ -1,0 +1,125 @@
+/* Background Styling */
+.pledge-section {
+    background: url('help.jpeg') no-repeat center center/cover; /* Corrected path */
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.pledge-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); /* Dark overlay for readability */
+    backdrop-filter: blur(8px); /* Blur effect */
+}
+
+
+/* Container Styling */
+.pledge-container {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 30px;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 2;
+}
+
+/* Heading */
+.pledge-container h1 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.pledge-container h1 span {
+    font-size: 1.3rem;
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* Input Fields */
+.pledge-container input[type="text"],
+.pledge-container input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: 0.3s ease-in-out;
+}
+
+.pledge-container input[type="text"]:focus,
+.pledge-container input[type="email"]:focus {
+    border-color: #007bff;
+    box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+/* Checkbox Styling */
+.pledge-options {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.pledge-options div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pledge-options input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+/* Submit Button */
+.pledge-container button {
+    background: #007bff;
+    color: white;
+    padding: 14px 22px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.pledge-container button:hover {
+    background: #0056b3;
+}
+
+/* Success/Error Messages */
+.message {
+    margin-top: 15px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .pledge-container {
+        width: 90%;
+        padding: 20px;
+    }
+
+    .pledge-container h1 {
+        font-size: 20px;
+    }
+
+    .pledge-container button {
+        font-size: 14px;
+        padding: 12px 18px;
+    }
+}
