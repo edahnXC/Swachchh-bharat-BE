@@ -9,7 +9,7 @@ function Home() {
       <div className="hero-content">
         <h1>Your Support Is Powerful.</h1>
         <p>Keep Your City Clean And Live Healthy</p>
-        <button className="get-support-btn" onClick={() => navigate("/support")}>
+        <button className="get-support-btn" onClick={() => navigate("/contact")}>
           Get Support
         </button>
       </div>

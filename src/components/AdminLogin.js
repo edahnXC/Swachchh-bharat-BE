@@ -17,7 +17,7 @@ const AdminLogin = () => {
 
             if (response.data.success) {
                 localStorage.setItem("adminToken", response.data.token); // Store token
-                navigate("/admin/dashboard"); // Redirect to dashboard
+                navigate("/admin/panel"); // Redirect to dashboard
             } else {
                 setError(response.data.message); // Display error
             }

@@ -3,22 +3,29 @@ const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const Volunteer = require("../models/Volunteer");
 const Donor = require("../models/Donor");
+const Contact = require("../models/Contact");
 const Programme = require("../models/Programme");
+const Pledge=require("../models/Pledge");
 
 const adminUser = {
     username: process.env.ADMIN_USERNAME,
     password: process.env.ADMIN_PASSWORD_HASH, // Pre-hashed password
 };
 
-//Admin Login Function
+// Admin Login Function
 exports.loginAdmin = async (req, res) => {
     const { username, password } = req.body;
+    console.log("Login attempt:", { username, password });
 
     if (username !== adminUser.username) {
+        console.log("Invalid username:", username);
         return res.status(401).json({ success: false, message: "Invalid username" });
     }
 
+    console.log("Stored password hash:", adminUser.password);
     const isMatch = await bcrypt.compare(password, adminUser.password);
+    console.log("Password match result:", isMatch);
+
     if (!isMatch) {
         return res.status(401).json({ success: false, message: "Invalid password" });
     }
@@ -27,9 +34,18 @@ exports.loginAdmin = async (req, res) => {
     res.json({ success: true, token });
 };
 
-//Protected Routes
+// Protected Routes
 exports.getAdminDashboard = (req, res) => {
     res.json({ success: true, message: "Welcome to the Admin Dashboard!" });
+};
+
+exports.getContacts = async (req, res) => {
+    try {
+        const contacts = await Contact.find();
+        res.json({ success: true, data: contacts });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching contacts", error: error.message });
+    }
 };
 
 exports.getVolunteers = async (req, res) => {
@@ -40,6 +56,15 @@ exports.getVolunteers = async (req, res) => {
         res.status(500).json({ success: false, message: "Error fetching volunteers", error: error.message });
     }
 };
+exports.getPledges = async (req, res) => {
+    try {
+        const pledges = await Pledge.find(); 
+        res.json({ success: true, data: pledges });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Error fetching pledges", error: error.message });
+    }
+};
+
 
 exports.getDonors = async (req, res) => {
     try {
@@ -50,19 +75,20 @@ exports.getDonors = async (req, res) => {
     }
 };
 
-exports.uploadProgramme = async (req, res) => {
+exports.getAdminStats = async (req, res) => {
     try {
-        const { title, description, imageUrl } = req.body;
-        if (!title || !description || !imageUrl) {
-            return res.status(400).json({ success: false, message: "All fields are required" });
-        }
-
-        const newProgramme = new Programme({ title, description, imageUrl });
-        await newProgramme.save();
-
-        res.json({ success: true, message: "Programme uploaded successfully" });
+        const totalDonors = await Donor.countDocuments();
+        const totalVolunteers = await Volunteer.countDocuments();
+        const totalPrograms = await Programme.countDocuments();
+        const totalPledges=await Pledge.countDocuments();
+        res.json({
+            totalDonors,
+            totalVolunteers,
+            totalPrograms,
+            totalPledges,
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: "Error uploading programme", error: error.message });
+        res.status(500).json({ error: "Error fetching admin stats" });
     }
 };
 

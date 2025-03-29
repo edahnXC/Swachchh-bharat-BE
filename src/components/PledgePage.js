@@ -7,10 +7,11 @@ const PledgePage = () => {
     email: "",
     city: "",
     pledges: [],
-    date:"",
+    date: new Date().toISOString().split("T")[0], // Auto-fill date
   });
 
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const pledgeOptions = [
     "I pledge to keep my surroundings clean.",
@@ -34,7 +35,8 @@ const PledgePage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage(""); 
+    setMessage("");
+    setLoading(true);
 
     try {
       const response = await fetch("http://localhost:5000/api/pledge", {
@@ -44,14 +46,22 @@ const PledgePage = () => {
       });
 
       const data = await response.json();
+      setLoading(false);
 
       if (response.ok) {
         setMessage("✅ Thank you for your pledge!");
-        setFormData({ name: "", email: "", city: "", pledges: [] ,date:""}); // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          city: "",
+          pledges: [],
+          date: new Date().toISOString().split("T")[0], // Reset date
+        });
       } else {
-        setMessage("❌ Error submitting pledge: " + data.error);
+        setMessage("❌ Error: " + data.message);
       }
     } catch (error) {
+      setLoading(false);
       setMessage("❌ Failed to connect to the server. Please try again.");
     }
   };
@@ -61,7 +71,7 @@ const PledgePage = () => {
       <div className="pledge-section">
         <div className="pledge-container">
           <h1>Pledge for <span>Clean India Mission</span></h1>
-          {message && <p className="message">{message}</p>} {/* Display success/error message */}
+          {message && <p className="message">{message}</p>} 
 
           <form onSubmit={handleSubmit}>
             <input 
@@ -103,13 +113,10 @@ const PledgePage = () => {
               ))}
             </div>
 
-            <button type="submit">Submit Pledge</button>
+            <button type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Submit Pledge"}
+            </button>
           </form>
-
-          {/* <div className="social-buttons">
-            <a href="#" className="share-btn facebook">Facebook</a>
-            <a href="#" className="share-btn">WhatsApp</a>
-          </div> */}
         </div>
       </div>
     </center>

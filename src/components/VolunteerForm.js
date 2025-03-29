@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
-import "../styles.css"; // Ensure you have styles
+import "../styles.css";
 
 const VolunteerForm = () => {
   // State for form fields
@@ -63,7 +63,7 @@ const VolunteerForm = () => {
         <button type="submit">Register</button>
       </form>
 
-      <Link to="/">Back to Homepage</Link>
+      <Link to="/" className="back-btn">Back to Homepage</Link>
       </div>
     </div>
   );

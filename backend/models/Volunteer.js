@@ -6,7 +6,7 @@ const VolunteerSchema = new mongoose.Schema({
   state: { type: String, required: true },
   city: { type: String, required: true },
   number: { type: String, required: true },
-  message: { type: String },
+  message: { type: String }
 });
 
 module.exports = mongoose.model("Volunteer", VolunteerSchema);

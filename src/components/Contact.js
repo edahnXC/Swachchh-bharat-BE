@@ -59,9 +59,8 @@ function Contact() {
             <br />
             Gujarat - India.
             <br />
-            +1234567890
           </p>
-          <p>Contact us</p>
+          <p>Contact us: +123456789</p>
         </div>
       </div>
     </div>
