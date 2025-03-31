@@ -1,206 +1,300 @@
 /* Global Styles */
-body {
+:root {
+    --primary-color: #3e39c2;
+    --primary-dark: #342fa8;
+    --secondary-color: #3498db;
+    --accent-color: #4895ef;
+    --dark-color: #2c3e50;
+    --light-color: #ecf0f1;
+    --success-color: #28a745;
+    --error-color: #e74c3c;
+    --warning-color: #ffc107;
+    
+    /* Swachh Bharat Colors */
+    --swachh-green: #00983f;
+    --swachh-dark-green: #007a33;
+    --swachh-orange: #e67e22;
+    --swachh-dark-orange: #d35400;
+    --swachh-blue: #3498db;
+    --swachh-red: #e74c3c;
+    --swachh-dark-red: #c0392b;
+  
+    /* UI Variables */
+    --border-radius: 8px;
+    --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
+    line-height: 1.6;
     background-color: #f5f5f5;
     color: #333;
-    padding-top:60px;
-}
-html, body {
-    height: 100%;
-}
-main {
-    flex-grow: 1;
-    min-height: calc(100vh - 100px); /* Adjust based on footer height */
-}
-.app-container {
+  }
+  
+  .app-container {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
   }
   
-  /* Navbar styling */
-  .navbar {
-    background-color:#f3f1eb;
+  /* Top Bar */
+  .top-bar {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 0;
+    font-size: 14px;
+  }
+  
+  .top-bar .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .contact-info span {
+    margin-right: 20px;
+  }
+  
+  .contact-info i {
+    margin-right: 5px;
+  }
+  
+  .social-icons a {
+    color: white;
+    margin-left: 15px;
+    font-size: 16px;
+    transition: var(--transition);
+  }
+  
+  .social-icons a:hover {
+    color: var(--swachh-orange);
+    transform: translateY(-2px);
+  }
+  
+  /* Navigation */
+  .navbar {
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+  
+  .navbar .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 15px 20px;
   }
   
-  /* Navigation links styling */
+  .logo {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo i {
+    margin-right: 8px;
+  }
+  
   .nav-links {
     display: flex;
     list-style: none;
-    gap: 30px;
-    margin: 0;
-    padding: 0;
-    color: #e3e0e0;
   }
   
-  /* Navigation link styles */
+  .nav-links li {
+    margin: 0 15px;
+  }
+  
   .nav-links a {
     text-decoration: none;
-    color: #908d8d;  /* Default text color */
-    font-size: 16px;
-    font-weight: 500;
-    transition: color 0.3s ease, transform 0.2s ease; /* Smooth transition */
+    color: #555;
+    font-weight: 600;
+    transition: var(--transition);
+    position: relative;
   }
   
-  /* Hover effect */
   .nav-links a:hover {
-    color: #2c2c2a;  
-    transform: scale(1.1); 
+    color: var(--swachh-orange);
   }
-    .nav-links a:active {
-    color: #252222; /* Change color when clicked */
+  
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -5px;
+    left: 0;
+    background-color: var(--swachh-orange);
+    transition: var(--transition);
   }
-
-/* Header Section */
-header {
-    background-color: #f6f1f1;
-    padding: 10px 20px;
+  
+  .nav-links a:hover::after {
+    width: 100%;
+  }
+  
+  .nav-buttons {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    position: fixed; /* Make the header fixed */
-    top: 0; /* Stick to the top */
-    left: 0; /* Stick to the left */
-    width: 100%; /* Span the full width */
-    z-index: 1000; /* Ensure it stays above other content */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
-}
-
-.nav-links {
-    flex-grow: 1; /* Allows it to take available space */
-}
-.donate-btn {
-    background: #a91e0e;
-    margin-left:15px;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background 0.3s;
   }
-.donate-btn:hover {
-    margin-left:15px;
-    background: rgba(212, 58, 34, 0.967); /* Darker shade for hover effect */
-    transform: scale(1.01); /* Slightly enlarge on hover */
-}
-
-.get-support-btn {
-    background: rgba(240, 78, 48, 0.6); /* Semi-transparent color for glass effect */
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 10px 15px;
-    border-radius: 5px;
+  
+  .donate-btn {
+    background-color: var(--swachh-orange);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.get-support-btn:hover {
-    background: rgba(212, 59, 34, 0.6); /* Darker shade for hover effect */
-    transform: scale(1.05); /* Slightly enlarge on hover */
-}
-
-/* Hero Section */
-.hero {
-    background: url('help.jpeg') center/cover no-repeat;
-    color: #fff;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .donate-btn i {
+    margin-right: 8px;
+  }
+  
+  .donate-btn:hover {
+    background-color: var(--swachh-dark-orange);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(230, 126, 34, 0.3);
+  }
+  
+  .logged-btn {
+    background-color: var(--swachh-red);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 15px;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 100px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .logged-btn:hover {
+    background-color: var(--swachh-dark-red);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Hero Section */
+  .hero-section {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('help.jpeg') center/cover no-repeat;
+    color: white;
     text-align: center;
-    padding: 100px 20px;
+    padding: 120px 20px;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-}
-
-.hero-content {
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    padding: 30px;
-    border-radius: 10px;
-    max-width: 600px;
-}
-
-.hero-content h1 {
+    min-height: 80vh;
+  }
+  
+  .hero-content {
+    max-width: 800px;
+    animation: fadeIn 1s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .hero-content h1 {
     font-size: 3rem;
     margin-bottom: 20px;
     font-weight: 700;
-}
-
-.hero-content p {
+    line-height: 1.2;
+    text-shadow: var(--text-shadow);
+  }
+  
+  .hero-content p {
     font-size: 1.2rem;
-    margin-bottom: 20px;
-    font-weight: 400;
-}
-
-/* Info Section */
-#info {
+    margin-bottom: 30px;
+    opacity: 0.9;
+    text-shadow: var(--text-shadow);
+  }
+  
+  .hero-buttons {
     display: flex;
-    justify-content: space-around;
-    padding: 40px;
-    background-color: #4442c9;
-    color: #fff;
     gap: 20px;
-    flex-wrap: wrap;
-}
-
-#info div {
-    text-align: center;
-    flex: 1;
-    margin: 10px;
-    padding: 20px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-
-#info h2 {
-    font-size: 1.8rem;
-    margin-bottom: 10px;
-    font-weight: 600;
-}
-
-#info p {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
-    font-weight: 400;
-}
-
-.apply-btn {
-    background-color: #f04e30;
-    color: #fff;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
+    justify-content: center;
+  }
+  
+  .primary-btn, .secondary-btn {
+    padding: 12px 30px;
+    border-radius: 30px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.3s ease;
-}
-
-.apply-btn:hover {
-    background-color: #d43b22;
-}
-
-/* Footer Section */
-footer {
-    text-align: center;
-    padding: 15px;
-    background-color: #171818;
-    color: #fff;
+    transition: var(--transition);
+    border: none;
     font-size: 1rem;
-}
-
-/* Volunteer Page */
-.volunteer-page, .volunteer-signup-page {
+  }
+  
+  .primary-btn {
+    background-color: var(--swachh-green);
+    color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .primary-btn:hover {
+    background-color: var(--swachh-dark-green);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .secondary-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid white;
+  }
+  
+  .secondary-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  /* Main Content */
+  main {
+    flex: 1;
+    padding: 40px 0;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  /* Volunteer Page Styles */
+  .volunteer-page {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -208,157 +302,200 @@ footer {
     justify-content: center;
     min-height: 100vh;
     text-align: center;
-    padding: 40px;
+    padding: 2rem;
     overflow: hidden;
-}
-
-/* Background image with blur effect */
-.volunteer-page::before, 
-.volunteer-signup-page::before {
+  }
+  
+  .volunteer-page::before {
     content: "";
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: url('helpp.jpeg') no-repeat center center fixed;
-    background-size: cover;
-    filter: blur(7px); /* Blur effect only on the background */
-    z-index: -1; /* Ensures it stays behind the content */
-}
-
-/* Container for text and form (should NOT be blurred) */
-.volunteer-container {
+    background: url('helpp.jpeg') no-repeat center center/cover;
+    background-attachment: fixed;
+    filter: blur(6px) brightness(0.7);
+    z-index: -1;
+  }
+  
+  .volunteer-container {
     position: relative;
-    background: rgba(255, 255, 255, 0.562); /* Semi-transparent background */
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 400px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 500px;
     text-align: center;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 1; /* Ensures it appears above the blurred background */
-}
-
-/* Text and headings */
-.volunteer-page h2, .volunteer-signup-page h2 {
-    font-size: 2.5rem;
-    margin-bottom: 20px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+    animation: slideUp 0.8s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .volunteer-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+  
+  .volunteer-container h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
     font-weight: 700;
-    color: #001d65;
-}
-
-.volunteer-page p, .volunteer-signup-page p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-    font-weight: 400;
-    color: #333;
-}
-
-
- .signup-btn,.login-btn, .volunteer-signup-page button {
-    background: rgba(72, 103, 179, 0.6); /* Semi-transparent color for glass effect */
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 10px 15px;
-    border-radius: 5px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    margin: 10px;
-    display: inline-block;
-}
-
-.volunteer-page, .volunteer-page .login-btn:hover, .volunteer-signup-page button:hover {
-    background: rgba(237, 239, 243, 0.6); /* Darker shade for hover effect */
-    transform: scale(1.05);
-}
-.back-btn {
-    display: inline-block;
+  }
+  
+  .volunteer-container p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: var(--dark-color);
+  }
+  
+  /* Form Container Specific Styles */
+  .form-container {
+    max-width: 600px;
+    text-align: left;
+  }
+  
+  .form-intro {
+    margin-bottom: 2rem !important;
     text-align: center;
-    padding: 10px 15px;
-    margin-top: 15px;
-    background: rgba(72, 103, 179, 0.6); /* Matching your button style */
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-    color: #fff;
+  }
+  
+  /* Form Styles */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
     font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 5px;
-    cursor: pointer;
-    text-decoration: none; /* Removes underline */
-    transition: background 0.3s ease, transform 0.3s ease;
-}
-
-.back-btn:hover {
-    background: rgba(237, 239, 243, 0.6);
-    transform: scale(1.05);
-    color: #001d65;
-}
-
-.signup-btn:hover{
-    background: rgba(4, 86, 249, 0.859); /* Darker shade for hover effect */
-    transform: scale(1.05);
-}
-.volunteer-signup-page form {
+    color: var(--dark-color);
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(72, 149, 239, 0.2);
+  }
+  
+  .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+  
+  .form-row {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .form-row .form-group {
+    flex: 1;
+  }
+  
+  /* Button Styles */
+  .cta-buttons {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 15px; /* More spacing between fields */
-    padding: 20px;
-    width: 100%;
-    max-width: 450px; /* Slightly wider for better alignment */
-}
-@media (max-width: 600px) {
-    .volunteer-container {
-        width: 95%;
-        padding: 20px;
-    }
-
-    .volunteer-signup-page input, 
-    .volunteer-signup-page textarea,
-    .volunteer-signup-page button {
-        max-width: 100%; /* Ensures full-width buttons on small screens */
-    }
-}
-
-.volunteer-signup-page input, .volunteer-signup-page textarea {
-    width: 100%;
-    max-width: 400px;
-    padding: 12px;
-    color: #001d65; /* Dark blue for readability */
-    background: rgba(255, 255, 255, 0.2); /* Semi-transparent input */
-    border: 1px solid rgba(15, 9, 9, 0.503); /* Lighter border */
-    border-radius: 8px; /* Softer edges */
-    font-size: 16px;
-    backdrop-filter: blur(5px); /* Blur effect for glass feel */
-}
-.volunteer-signup-page input:focus, 
-.volunteer-signup-page textarea:focus {
-    border: 1px solid #001d65; /* Deep blue border */
-    outline: none;
-    background: rgba(255, 255, 255, 0.673);
-    box-shadow: 0px 0px 8px rgba(72, 103, 179, 0.5);
-}
-
-.volunteer-signup-page button {
-    background: linear-gradient(135deg, rgba(72, 103, 179, 0.8), rgba(48, 80, 160, 0.8)); 
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.volunteer-signup-page button:hover {
-    background: linear-gradient(135deg, rgba(72, 103, 179, 1), rgba(48, 80, 160, 1)); 
-    transform: scale(1.05);
-    box-shadow: 0px 4px 10px rgba(48, 80, 160, 0.5);
-}
-/* Donor Pages */
-.donorLogin-page, .donorSignup-page, .donation-page {
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .primary-btn, .secondary-btn, .back-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+    text-align: center;
+    cursor: pointer;
+  }
+  
+  .primary-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 8px rgba(62, 57, 194, 0.2);
+  }
+  
+  .primary-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(62, 57, 194, 0.3);
+  }
+  
+  .secondary-btn {
+    background-color: transparent;
+    color: white;
+    border: 2px solid var(--light-color);
+  }
+  
+  .secondary-btn:hover {
+    background-color: rgba(62, 57, 194, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .back-btn {
+    display: block;
+    margin-top: 2rem;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    background-color: transparent;
+  }
+  
+  .back-btn:hover {
+    background-color: rgba(62, 57, 194, 0.1);
+  }
+  
+  /* Alert Messages */
+  .alert {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+  }
+  
+  .error-message {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: var(--error-color);
+    border-left: 4px solid var(--error-color);
+  }
+  
+  .success-message {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+  }
+  
+  /* Enhanced Donation Page */
+  .donation-page {
     position: relative;
     padding: 40px;
     text-align: center;
@@ -369,11 +506,373 @@ footer {
     min-height: 100vh;
     width: 100%;
     overflow: hidden;
-}
-
-.donorLogin-page::before, 
-.donorSignup-page::before, 
-.donation-page::before {
+  }
+  
+  .donation-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('clean.jpeg') no-repeat center center/cover;
+    background-attachment: fixed;
+    filter: blur(6px) brightness(0.7);
+    z-index: -1;
+  }
+  
+  .donation-container {
+    position: relative;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 600px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    transition: var(--transition);
+  }
+  
+  .donation-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  }
+  
+  .donation-page h2 {
+    font-size: 2.2rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+    font-weight: 700;
+  }
+  
+  .donation-page p {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    color: var(--dark-color);
+  }
+  
+  .donation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+  }
+  
+  .donation-form-group {
+    margin-bottom: 1rem;
+    text-align: left;
+  }
+  
+  .donation-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+  
+  .donation-form-group input,
+  .donation-form-group select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  
+  .donation-form-group input:focus,
+  .donation-form-group select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(72, 149, 239, 0.2);
+  }
+  
+  .donation-form-row {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .donation-form-row .donation-form-group {
+    flex: 1;
+  }
+  
+  .submit-donation-btn {
+    background: linear-gradient(135deg, var(--swachh-green), var(--swachh-dark-green));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: var(--transition);
+    margin-top: 1.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .submit-donation-btn:hover {
+    background: linear-gradient(135deg, var(--swachh-dark-green), var(--swachh-green));
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  }
+  @media (max-width: 768px) {
+    .donation-container {
+      padding: 1.5rem;
+    }
+    
+    .donation-form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+    
+    .donation-container h2 {
+      font-size: 1.75rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .donation-page {
+      padding: 1rem;
+    }
+    
+    .donation-container {
+      padding: 1.25rem;
+    }
+    
+    .donation-container h2 {
+      font-size: 1.5rem;
+    }
+    
+    .donation-container p {
+      font-size: 1rem;
+    }
+  }
+  /* Footer */
+  footer {
+    background-color: #222;
+    color: white;
+    padding: 60px 0 20px;
+  }
+  
+  .footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  .footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-bottom: 40px;
+  }
+  
+  .footer-column {
+    flex: 1;
+    min-width: 250px;
+    margin-bottom: 30px;
+    padding: 0 15px;
+  }
+  
+  .footer-column h3 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+    color: var(--swachh-green);
+  }
+  
+  .footer-column h3::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 50px;
+    height: 2px;
+    background-color: var(--swachh-orange);
+  }
+  
+  .footer-column p {
+    color: #bbb;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+  
+  .footer-social {
+    display: flex;
+    gap: 15px;
+  }
+  
+  .footer-social a {
+    color: white;
+    font-size: 18px;
+    transition: var(--transition);
+  }
+  
+  .footer-social a:hover {
+    color: var(--swachh-orange);
+    transform: translateY(-2px);
+  }
+  
+  .footer-column ul {
+    list-style: none;
+  }
+  
+  .footer-column ul li {
+    margin-bottom: 10px;
+  }
+  
+  .footer-column ul li a {
+    color: #bbb;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  
+  .footer-column ul li a:hover {
+    color: var(--swachh-green);
+    padding-left: 5px;
+  }
+  
+  .footer-contact-info {
+    list-style: none;
+  }
+  
+  .footer-contact-info li {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    color: #bbb;
+  }
+  
+  .footer-contact-info i {
+    margin-right: 10px;
+    color: var(--swachh-orange);
+  }
+  
+  .footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+    color: #bbb;
+    font-size: 14px;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 992px) {
+    .hero-content h1 {
+      font-size: 2.5rem;
+    }
+    
+    .hero-content p {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .navbar .container {
+      flex-direction: column;
+    }
+    
+    .nav-links {
+      margin: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .nav-buttons {
+      margin-top: 15px;
+    }
+    
+    .hero-content h1 {
+      font-size: 2rem;
+    }
+    
+    .hero-buttons {
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .volunteer-container,
+    .donation-container {
+      padding: 1.5rem;
+    }
+    
+    .form-row,
+    .donation-form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+    
+    .volunteer-container h2,
+    .donation-page h2 {
+      font-size: 1.75rem;
+    }
+    
+    .footer-top {
+      flex-direction: column;
+    }
+    
+    .footer-column {
+      margin-bottom: 30px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .top-bar .container {
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .volunteer-page,
+    .donation-page {
+      padding: 1rem;
+    }
+    
+    .volunteer-container,
+    .donation-container {
+      padding: 1.25rem;
+    }
+    
+    .volunteer-container h2,
+    .donation-page h2 {
+      font-size: 1.5rem;
+    }
+    
+    .volunteer-container p,
+    .donation-page p {
+      font-size: 1rem;
+    }
+    
+    .hero-content {
+      padding: 20px;
+    }
+    
+    .hero-content h1 {
+      font-size: 1.8rem;
+    }
+  }
+  
+  /* Donor Login/Signup (unchanged) */
+  .donorLogin-page, .donorSignup-page {
+    position: relative;
+    padding: 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+  
+  .donorLogin-page::before, 
+  .donorSignup-page::before {
     content: "";
     position: absolute;
     top: 0;
@@ -382,26 +881,25 @@ footer {
     height: 100%;
     background: url('clean.jpeg') no-repeat center center fixed;
     background-size: cover;
-    filter: blur(8px); /* Adjust blur intensity */
+    filter: blur(8px);
     z-index: -1;
-}
-
-
-.donorLogin-page h2, .donorSignup-page h2, .donation-page h2 {
+  }
+  
+  .donorLogin-page h2, .donorSignup-page h2 {
     font-size: 2.5rem;
     margin-bottom: 20px;
     font-weight: 700;
     color: #f7f7f7; 
-}
-
-.donorLogin-page h3, .donorSignup-page h3, .donation-page p {
+  }
+  
+  .donorLogin-page h3, .donorSignup-page h3 {
     font-size: 1.2rem;
     margin-bottom: 20px;
     font-weight: 400;
     color: #f6f4f4fb;
-}
-
-.login-container, .signup-container {
+  }
+  
+  .login-container, .signup-container {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(10px);
     padding: 30px;
@@ -414,18 +912,18 @@ footer {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-}
-
-.login-container input, .signup-container input {
+  }
+  
+  .login-container input, .signup-container input {
     width: 100%;
     padding: 12px;
     margin: 10px 0;
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 16px;
-}
-
-.login-container button, .signup-container button {
+  }
+  
+  .login-container button, .signup-container button {
     width: 100%;
     padding: 12px;
     border: none;
@@ -435,33 +933,32 @@ footer {
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.login-container button:hover, .signup-container button:hover {
+  }
+  
+  .login-container button:hover, .signup-container button:hover {
     background: #a03030;
     transform: scale(1.05);
-}
-
-.login-container a, .signup-container a {
+  }
+  
+  .login-container a, .signup-container a {
     color: #b34848;
     text-decoration: none;
     font-weight: 600;
-}
-
-.login-container a:hover, .signup-container a:hover {
+  }
+  
+  .login-container a:hover, .signup-container a:hover {
     text-decoration: underline;
-}
-
-/* Contact Page */
-.contact-page {
+  }
+  
+  /* Contact Page (unchanged) */
+  .contact-page {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-}
-
-/* Banner */
-.contact-banner {
+  }
+  
+  .contact-banner {
     background: url('banner-image.jpeg') no-repeat center center/cover;
     width: 100%;
     text-align: center;
@@ -469,42 +966,40 @@ footer {
     font-size: 2rem;
     padding: 60px;
     font-weight: bold;
-}
-
-/* Main Container */
-.contact-container {
+  }
+  
+  .contact-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     gap: 50px;
     padding: 40px;
     width: 90%;
-}
-
-/* Contact Form */
-.contact-form {
+  }
+  
+  .contact-form {
     flex: 1;
     max-width: 500px;
     background: #fff;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
-}
-
-.contact-form input,
-.contact-form textarea {
+  }
+  
+  .contact-form input,
+  .contact-form textarea {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
     border: 1px solid #ccc;
     border-radius: 5px;
-}
-
-.contact-form textarea {
+  }
+  
+  .contact-form textarea {
     height: 100px;
-}
-
-.contact-form button {
+  }
+  
+  .contact-form button {
     width: 100%;
     padding: 10px;
     background: #28a745;
@@ -513,196 +1008,75 @@ footer {
     font-size: 16px;
     cursor: pointer;
     border-radius: 5px;
-}
-
-.contact-form button:hover {
+  }
+  
+  .contact-form button:hover {
     background: #218838;
-}
-
-/* reCAPTCHA */
-.recaptcha-container {
+  }
+  
+  .recaptcha-container {
     display: flex;
     align-items: center;
     gap: 10px;
-}
-
-/* Contact Info */
-.contact-info {
+  }
+  
+  .contact-info {
     flex: 1;
+    color:#000000;
     max-width: 300px;
-    background: #fff;
+    background: #ffffff;
     padding: 20px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
-}
-
-.contact-info h2 {
+  }
+  
+  .contact-info h2 {
     font-size: 1.5rem;
-}
-
-.contact-info hr {
+  }
+  
+  .contact-info hr {
     margin: 10px 0;
     border: 1px solid black;
-}
-.donation-page {
-    background: url('clean.jpeg') no-repeat center center fixed;
-    background-size: cover;
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: auto;
-  padding: 30px;
-}
-/* .donation-page h2 {
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 20px;
-    font-weight: 600;
-} */
-h2 {
-    color: #fff;
-    font-size: 24px;
-    margin-bottom: 20px;
   }
-/* Form Styling */
-#donationForm {
-    background: rgba(255, 255, 255, 0.2); /* Transparency */
-    backdrop-filter: blur(10px); /* Blurred effect */
-    box-shadow: 0 8px 32px rgba(255, 255, 255, 0.2); /* Soft glowing effect */
-    padding: 30px;
-    border-radius: 15px;
-    width: 90%;
-    max-width: 500px;
+  
+  /* Admin Pages (unchanged) */
+  .admin-login-page, .admin-panel {
+    position: relative;
+    padding: 40px;
     text-align: center;
-    color: white;
-  }
-
-/* Form Inputs */
-.donation-form-section input,
-.donation-form-section select {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0;
-  border-radius: 8px;
-  border: none;
-  outline: none;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.474);
-  color: rgb(0, 0, 0);
-  transition: 0.3s ease-in-out;
-}
-
-.donation-form-section input::placeholder {
-    color: rgba(0, 0, 0, 0.7);
-  }
-  
-  /* Select dropdown styling */
-  .donation-form-section select {
-    cursor: pointer;
-    color: rgb(0, 0, 0);
-  }
-  
-  /* Input focus effect */
-  .donation-form-section input:focus,
-  .donation-form-section select:focus {
-    background: rgba(255, 255, 255, 0.54);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-  }
-  
-
-/* Address Heading */
-#address {
-    font-size: 18px;
-    font-weight: 600;
-    color: #444;
-    margin-top: 20px;
-    text-align: left;
-}
-
-/* Donation Form Sections */
-.donation-form-section {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-
-/* Donate Button */
-#submit {
-    background: linear-gradient(135deg, #28a745, #218838);
-    color: white;
-    border: none;
-    padding: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-
-#submit:hover {
-    background: linear-gradient(135deg, #218838, #1e7e34);
-    transform: scale(1.05);
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    #donationForm {
-      width: 90%;
-      padding: 20px;
-    }
-  
-    h2 {
-      font-size: 20px;
-    }
-  
-    button {
-      font-size: 16px;
-      padding: 10px;
-    }
-    .donation-form-section input, 
-    .donation-form-section select {
-        min-width: 100%;
-    }
-
-    #submit, .logout-btn {
-        width: 100%;
-    }
-}
-  .logout-btn:hover {
-    background: #dc1313;
-    transform: scale(1.05);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
   }
-  .logged-btn{
-    background-color: #a91e0e; /* Red color to indicate logout */
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-left: 20px;
-    transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
-  }
-  .logged-btn:hover{
-    background-color: #cc0000; /* Darker red on hover */
-    transform: scale(1.05);
-  }
-  .logged-btn:active {
-    background-color: #b30000; /* Even darker red when clicked */
-    transform: scale(0.98);
-}
   
-  h3#address {
-    color: #f5e6e6;
-    font-size: 20px;
-    text-transform: uppercase;
-    font-weight: bold;
-    letter-spacing: 1px;
+  .admin-login-page::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url('help.jpeg') no-repeat center center fixed;
+    background-size: cover;
+    filter: blur(8px);
+    z-index: -1;
+  }
+  
+  .admin-login-container {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
     text-align: center;
-    margin-bottom: 15px;
+  }
+  
+  .admin-panel {
+    background-color: #f8f9fa;
   }

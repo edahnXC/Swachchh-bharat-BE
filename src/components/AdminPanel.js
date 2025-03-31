@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
   Row, Col, Card, Table, Button, 
@@ -15,6 +15,8 @@ import {
 import "./adminpanel.css";
 
 const AdminPanel = () => {
+    const location = useLocation();
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("dashboard");
     const [volunteers, setVolunteers] = useState([]);
     const [donors, setDonors] = useState([]);
@@ -23,7 +25,6 @@ const AdminPanel = () => {
     const [pledges, setPledges] = useState([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
     const navItems = [
         { tab: "dashboard", icon: <FaHome />, label: "Dashboard" },
@@ -38,9 +39,19 @@ const AdminPanel = () => {
     useEffect(() => {
         const token = localStorage.getItem("adminToken");
         if (!token) {
-            navigate("/admin/login");
+            navigate("/admin");
             return;
         }
+
+        // Set active tab based on current route
+        const path = location.pathname;
+        if (path.includes("volunteers")) setActiveTab("volunteers");
+        else if (path.includes("donors")) setActiveTab("donors");
+        else if (path.includes("contacts")) setActiveTab("contacts");
+        else if (path.includes("programs")) setActiveTab("programs");
+        else if (path.includes("pledges")) setActiveTab("pledges");
+        else if (path.includes("reports")) setActiveTab("reports");
+        else setActiveTab("dashboard");
 
         const fetchData = async () => {
             setLoading(true);
@@ -67,13 +78,14 @@ const AdminPanel = () => {
         };
 
         fetchData();
-    }, [navigate]);
+    }, [navigate, location]);
 
     const goToHomepage = () => navigate("/");
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-    const handleCardClick = (tab) => {
+    const handleTabChange = (tab) => {
         setActiveTab(tab);
+        navigate(`/admin/panel/${tab}`);
     };
 
     const handleAddNew = () => {
@@ -82,18 +94,15 @@ const AdminPanel = () => {
                 navigate("/admin/add-program");
                 break;
             case "contacts":
-                navigate("/Contact");
+                navigate("/contact");
                 break;
             case "pledges":
-                navigate("/Pledge");
+                navigate("/pledge");
                 break;
             case "volunteers":
-                navigate("/Volunteer-Form");
-                break;
-            case "donors":
+                navigate("/volunteer-form");
                 break;
             default:
-                // For other tabs, we'll keep the existing modal
                 break;
         }
     };
@@ -103,7 +112,6 @@ const AdminPanel = () => {
         if (!window.confirm(`Are you sure you want to delete this ${type}?`)) return;
         
         try {
-            // For pledges, we need to use a different endpoint if the API requires it
             const endpoint = type === "pledges" ? 
                 `http://localhost:5000/api/pledges/${id}` :
                 `http://localhost:5000/api/admin/${type}/${id}`;
@@ -112,7 +120,6 @@ const AdminPanel = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            // Update the appropriate state based on the type
             switch(type) {
                 case 'volunteers':
                     setVolunteers(prev => prev.filter(item => item._id !== id));
@@ -140,6 +147,28 @@ const AdminPanel = () => {
         }
     };
 
+    const getCountForTab = (tab) => {
+        switch(tab) {
+            case 'volunteers': return volunteers.length;
+            case 'donors': return donors.length;
+            case 'contacts': return contacts.length;
+            case 'programs': return programs.length;
+            case 'pledges': return pledges.length;
+            default: return 0;
+        }
+    };
+
+    const getColorForTab = (tab) => {
+        switch(tab) {
+            case 'volunteers': return 'primary';
+            case 'donors': return 'success';
+            case 'contacts': return 'info';
+            case 'programs': return 'warning';
+            case 'pledges': return 'danger';
+            default: return 'primary';
+        }
+    };
+
     return (
         <div className={`admin-container ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
             {/* Sidebar */}
@@ -155,7 +184,7 @@ const AdminPanel = () => {
                         <Nav.Link
                             key={tab}
                             className={`nav-item ${activeTab === tab ? "active" : ""}`}
-                            onClick={() => setActiveTab(tab)}
+                            onClick={() => handleTabChange(tab)}
                         >
                             <span className="nav-icon">{icon}</span>
                             {sidebarOpen && <span className="nav-label">{label}</span>}
@@ -168,7 +197,7 @@ const AdminPanel = () => {
                         className="logout-btn"
                         onClick={() => {
                             localStorage.removeItem("adminToken");
-                            navigate("/admin/login");
+                            navigate("/admin");
                         }}
                     >
                         <FaUserCircle /> {sidebarOpen && "Logout"}
@@ -194,7 +223,7 @@ const AdminPanel = () => {
                                 <Dropdown.Divider />
                                 <Dropdown.Item onClick={() => {
                                     localStorage.removeItem("adminToken");
-                                    navigate("/admin/login");
+                                    navigate("/admin");
                                 }}>
                                     Logout
                                 </Dropdown.Item>
@@ -213,368 +242,307 @@ const AdminPanel = () => {
                         </div>
                     )}
 
-                    {/* Dashboard */}
-                    {!loading && activeTab === "dashboard" && (
-                        <div className="dashboard-content">
-                            <Row className="stats-row">
-                                <Col md={4} lg={2}>
-                                    <Card 
-                                        className="stat-card"
-                                        onClick={() => handleCardClick("volunteers")}
-                                    >
-                                        <Card.Body>
-                                            <div className="stat-icon bg-primary">
-                                                <FaUsers />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>{volunteers.length}</h3>
-                                                <p>Volunteers</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} lg={2}>
-                                    <Card 
-                                        className="stat-card"
-                                        onClick={() => handleCardClick("donors")}
-                                    >
-                                        <Card.Body>
-                                            <div className="stat-icon bg-success">
-                                                <FaDonate />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>{donors.length}</h3>
-                                                <p>Donors</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} lg={2}>
-                                    <Card 
-                                        className="stat-card"
-                                        onClick={() => handleCardClick("contacts")}
-                                    >
-                                        <Card.Body>
-                                            <div className="stat-icon bg-info">
-                                                <FaEnvelope />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>{contacts.length}</h3>
-                                                <p>Messages</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} lg={2}>
-                                    <Card 
-                                        className="stat-card"
-                                        onClick={() => handleCardClick("programs")}
-                                    >
-                                        <Card.Body>
-                                            <div className="stat-icon bg-warning">
-                                                <FaCalendarAlt />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>{programs.length}</h3>
-                                                <p>Programs</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} lg={2}>
-                                    <Card 
-                                        className="stat-card"
-                                        onClick={() => handleCardClick("pledges")}
-                                    >
-                                        <Card.Body>
-                                            <div className="stat-icon bg-danger">
-                                                <FaHandHoldingHeart />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>{pledges.length}</h3>
-                                                <p>Pledges</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                                <Col md={4} lg={2}>
-                                    <Card className="stat-card">
-                                        <Card.Body>
-                                            <div className="stat-icon bg-secondary">
-                                                <FaRupeeSign />
-                                            </div>
-                                            <div className="stat-info">
-                                                <h3>₹ XYZ</h3>
-                                                <p>Funds Raised</p>
-                                            </div>
-                                        </Card.Body>
-                                    </Card>
-                                </Col>
-                            </Row>
-
-                            {/* Recent Activity Section */}
-                            <Card className="mt-4">
-                                <Card.Header>
-                                    <h5>Recent Activities</h5>
-                                </Card.Header>
-                                <Card.Body>
-                                    <Table striped hover responsive>
-                                        <thead>
-                                            <tr>
-                                                <th>#</th>
-                                                <th>Activity</th>
-                                                <th>User</th>
-                                                <th>Date</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                {/* Sample data can be added here */}
-                                            </tr>
-                                        </tbody>
-                                    </Table>
-                                </Card.Body>
-                            </Card>
-                        </div>
-                    )}
-
-                    {/* Volunteers List */}
-                    {!loading && activeTab === "volunteers" && (
-    <Card>
-        <Card.Header className="d-flex justify-content-between align-items-center">
-            <h5>Volunteers</h5>
-            <Button variant="success" size="sm" onClick={handleAddNew}>
-                <FaPlus /> Add New
-            </Button>
-        </Card.Header>
-                            <Card.Body>
-                                <Table striped hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>State</th>
-                                            <th>City</th>
-                                            <th>Contact</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {volunteers.map((volunteer, index) => (
-                                            <tr key={volunteer._id}>
-                                                <td>{index + 1}</td>
-                                                <td>{volunteer.name}</td>
-                                                <td>{volunteer.email}</td>
-                                                <td>{volunteer.state}</td>
-                                                <td>{volunteer.city}</td>
-                                                <td>{volunteer.number}</td>
-                                                <td>
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(volunteer._id, "volunteers")}
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </td>
-                                            </tr>
+                    {!loading && (
+                        <>
+                            {/* Dashboard */}
+                            {activeTab === "dashboard" && (
+                                <div className="dashboard-content">
+                                    <Row className="stats-row">
+                                        {navItems.filter(item => item.tab !== "dashboard").map(({ tab, icon, label }) => (
+                                            <Col md={4} lg={2} key={tab}>
+                                                <Card 
+                                                    className="stat-card"
+                                                    onClick={() => handleTabChange(tab)}
+                                                >
+                                                    <Card.Body>
+                                                        <div className={`stat-icon bg-${getColorForTab(tab)}`}>
+                                                            {icon}
+                                                        </div>
+                                                        <div className="stat-info">
+                                                            <h3>{getCountForTab(tab)}</h3>
+                                                            <p>{label}</p>
+                                                        </div>
+                                                    </Card.Body>
+                                                </Card>
+                                            </Col>
                                         ))}
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
-                    )}
+                                        <Col md={4} lg={2}>
+                                            <Card className="stat-card">
+                                                <Card.Body>
+                                                    <div className="stat-icon bg-secondary">
+                                                        <FaRupeeSign />
+                                                    </div>
+                                                    <div className="stat-info">
+                                                        <h3>₹ XYZ</h3>
+                                                        <p>Funds Raised</p>
+                                                    </div>
+                                                </Card.Body>
+                                            </Card>
+                                        </Col>
+                                    </Row>
 
-                    {/* Donors List */}
-                    {!loading && activeTab === "donors" && (
-                        <Card>
-                            <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5>Donors</h5>
-                            </Card.Header>
-                            <Card.Body>
-                                <Table striped hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {donors.map((donor, index) => (
-                                            <tr key={donor._id}>
-                                                <td>{index + 1}</td>
-                                                <td>{donor.name}</td>
-                                                <td>{donor.email}</td>
-                                                <td>
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(donor._id, "donors")}
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
-                    )}
+                                    <Card className="mt-4">
+                                        <Card.Header>
+                                            <h5>Recent Activities</h5>
+                                        </Card.Header>
+                                        <Card.Body>
+                                            <Table striped hover responsive>
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Activity</th>
+                                                        <th>User</th>
+                                                        <th>Date</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {/* Sample data can be added here */}
+                                                </tbody>
+                                            </Table>
+                                        </Card.Body>
+                                    </Card>
+                                </div>
+                            )}
 
-                    {/* Contacts List */}
-                    {!loading && activeTab === "contacts" && (
-                        <Card>
-                            <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5>Messages</h5>
-                                <Button variant="success" size="sm" onClick={handleAddNew}>
-                                    <FaPlus /> Add New
-                                </Button>
-                            </Card.Header>
-                            <Card.Body>
-                                <Table striped hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Message</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {contacts.map((contact, index) => (
-                                            <tr key={contact._id}>
-                                                <td>{index + 1}</td>
-                                                <td>{contact.name}</td>
-                                                <td>{contact.email}</td>
-                                                <td>{contact.message}</td>
-                                                <td>
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(contact._id, "contacts")}
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
-                    )}
+                            {/* Volunteers List */}
+                            {activeTab === "volunteers" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Volunteers</h5>
+                                        <Button variant="success" size="sm" onClick={handleAddNew}>
+                                            <FaPlus /> Add New
+                                        </Button>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Table striped hover responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>State</th>
+                                                    <th>City</th>
+                                                    <th>Contact</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {volunteers.map((volunteer, index) => (
+                                                    <tr key={volunteer._id}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{volunteer.name}</td>
+                                                        <td>{volunteer.email}</td>
+                                                        <td>{volunteer.state}</td>
+                                                        <td>{volunteer.city}</td>
+                                                        <td>{volunteer.number}</td>
+                                                        <td>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(volunteer._id, "volunteers")}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </Card.Body>
+                                </Card>
+                            )}
 
-                    {/* Programs List */}
-                    {!loading && activeTab === "programs" && (
-                        <Card>
-                            <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5>Programs</h5>
-                                <Button variant="success" size="sm" onClick={handleAddNew}>
-                                    <FaPlus /> Add New
-                                </Button>
-                            </Card.Header>
-                            <Card.Body>
-                                <Table striped hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Title</th>
-                                            <th>Description</th>
-                                            <th>Image</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {programs.map((program, index) => (
-                                            <tr key={program._id}>
-                                                <td>{index + 1}</td>
-                                                <td>{program.title}</td>
-                                                <td>{program.description}</td>
-                                                <td>
-                                                    <img 
-                                                        src={program.imageUrl} 
-                                                        alt={program.title} 
-                                                        width="100" 
-                                                        className="img-thumbnail"
-                                                    />
-                                                </td>
-                                                <td>
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(program._id, "programs")}
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
-                    )}
+                            {/* Donors List */}
+                            {activeTab === "donors" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Donors</h5>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Table striped hover responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {donors.map((donor, index) => (
+                                                    <tr key={donor._id}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{donor.name}</td>
+                                                        <td>{donor.email}</td>
+                                                        <td>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(donor._id, "donors")}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </Card.Body>
+                                </Card>
+                            )}
 
-                    {/* Pledges List */}
-                    {!loading && activeTab === "pledges" && (
-                        <Card>
-                            <Card.Header className="d-flex justify-content-between align-items-center">
-                                <h5>Pledges</h5>
-                                <Button variant="success" size="sm" onClick={handleAddNew}>
-                                    <FaPlus /> Add New
-                                </Button>
-                            </Card.Header>
-                            <Card.Body>
-                                <Table striped hover responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>#</th>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>City</th>
-                                            <th>Pledges</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {pledges.map((pledge, index) => (
-                                            <tr key={pledge._id}>
-                                                <td>{index + 1}</td>
-                                                <td>{pledge.name}</td>
-                                                <td>{pledge.email}</td>
-                                                <td>{pledge.city}</td>
-                                                <td>
-                                                    <ul className="list-unstyled">
-                                                        {Array.isArray(pledge.pledges) ? (
-                                                            pledge.pledges.map((p, i) => (
-                                                                <li key={i}>• {p}</li>
-                                                            ))
-                                                        ) : (
-                                                            <li>• {pledge.pledges}</li>
-                                                        )}
-                                                    </ul>
-                                                </td>
-                                                <td>
-                                                    <Button 
-                                                        variant="danger" 
-                                                        size="sm"
-                                                        onClick={() => handleDelete(pledge._id, "pledges")}
-                                                    >
-                                                        <FaTrash />
-                                                    </Button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
+                            {/* Contacts List */}
+                            {activeTab === "contacts" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Messages</h5>
+                                        <Button variant="success" size="sm" onClick={handleAddNew}>
+                                            <FaPlus /> Add New
+                                        </Button>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Table striped hover responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Message</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {contacts.map((contact, index) => (
+                                                    <tr key={contact._id}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{contact.name}</td>
+                                                        <td>{contact.email}</td>
+                                                        <td>{contact.message}</td>
+                                                        <td>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(contact._id, "contacts")}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </Card.Body>
+                                </Card>
+                            )}
+
+                            {/* Programs List */}
+                            {activeTab === "programs" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Programs</h5>
+                                        <Button variant="success" size="sm" onClick={handleAddNew}>
+                                            <FaPlus /> Add New
+                                        </Button>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Table striped hover responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Title</th>
+                                                    <th>Description</th>
+                                                    <th>Image</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {programs.map((program, index) => (
+                                                    <tr key={program._id}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{program.title}</td>
+                                                        <td>{program.description}</td>
+                                                        <td>
+                                                            <img 
+                                                                src={program.imageUrl} 
+                                                                alt={program.title} 
+                                                                width="100" 
+                                                                className="img-thumbnail"
+                                                            />
+                                                        </td>
+                                                        <td>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(program._id, "programs")}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </Card.Body>
+                                </Card>
+                            )}
+
+                            {/* Pledges List */}
+                            {activeTab === "pledges" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Pledges</h5>
+                                        <Button variant="success" size="sm" onClick={handleAddNew}>
+                                            <FaPlus /> Add New
+                                        </Button>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <Table striped hover responsive>
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>City</th>
+                                                    <th>Pledges</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pledges.map((pledge, index) => (
+                                                    <tr key={pledge._id}>
+                                                        <td>{index + 1}</td>
+                                                        <td>{pledge.name}</td>
+                                                        <td>{pledge.email}</td>
+                                                        <td>{pledge.city}</td>
+                                                        <td>
+                                                            <ul className="list-unstyled">
+                                                                {Array.isArray(pledge.pledges) ? (
+                                                                    pledge.pledges.map((p, i) => (
+                                                                        <li key={i}>• {p}</li>
+                                                                    ))
+                                                                ) : (
+                                                                    <li>• {pledge.pledges}</li>
+                                                                )}
+                                                            </ul>
+                                                        </td>
+                                                        <td>
+                                                            <Button 
+                                                                variant="danger" 
+                                                                size="sm"
+                                                                onClick={() => handleDelete(pledge._id, "pledges")}
+                                                            >
+                                                                <FaTrash />
+                                                            </Button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    </Card.Body>
+                                </Card>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
