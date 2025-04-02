@@ -3,14 +3,15 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { 
   Row, Col, Card, Table, Button, 
-  Nav, Navbar, Dropdown
+  Nav, Navbar, Dropdown, Modal, Form,
+  Pagination, Alert
 } from "react-bootstrap";
 import { 
   FaUsers, FaDonate, FaEnvelope, FaHome, 
   FaHandHoldingHeart, FaRupeeSign,
   FaUserCircle, FaBars, FaTimes,
   FaTrash, FaPlus, FaChartLine,
-  FaCalendarAlt
+  FaCalendarAlt, FaEye
 } from "react-icons/fa";
 import "./adminpanel.css";
 
@@ -25,6 +26,19 @@ const AdminPanel = () => {
     const [pledges, setPledges] = useState([]);
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [showProfileModal, setShowProfileModal] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [adminDetails, setAdminDetails] = useState({
+        username: "",
+        email: "",
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
+    const [error, setError] = useState("");
+    const [success, setSuccess] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
 
     const navItems = [
         { tab: "dashboard", icon: <FaHome />, label: "Dashboard" },
@@ -57,6 +71,18 @@ const AdminPanel = () => {
             setLoading(true);
             try {
                 const headers = { Authorization: `Bearer ${token}` };
+                
+                // Fetch admin profile first
+                const adminResponse = await axios.get("http://localhost:5000/api/admin/profile", { headers });
+                if (adminResponse.data.success) {
+                    setAdminDetails(prev => ({
+                        ...prev,
+                        username: adminResponse.data.admin.username,
+                        email: adminResponse.data.admin.email
+                    }));
+                }
+
+                // Fetch other data
                 const responses = await Promise.all([
                     axios.get("http://localhost:5000/api/admin/volunteers", { headers }),
                     axios.get("http://localhost:5000/api/admin/donors", { headers }),
@@ -72,6 +98,10 @@ const AdminPanel = () => {
                 setPledges(responses[4].data?.data || responses[4].data || []);
             } catch (error) {
                 console.error("Error fetching data:", error.response?.data || error.message);
+                if (error.response?.status === 401) {
+                    localStorage.removeItem("adminToken");
+                    navigate("/admin");
+                }
             } finally {
                 setLoading(false);
             }
@@ -80,11 +110,23 @@ const AdminPanel = () => {
         fetchData();
     }, [navigate, location]);
 
+    // Pagination logic
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentVolunteers = volunteers.slice(indexOfFirstItem, indexOfLastItem);
+    const currentDonors = donors.slice(indexOfFirstItem, indexOfLastItem);
+    const currentContacts = contacts.slice(indexOfFirstItem, indexOfLastItem);
+    const currentPrograms = programs.slice(indexOfFirstItem, indexOfLastItem);
+    const currentPledges = pledges.slice(indexOfFirstItem, indexOfLastItem);
+
+    const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
     const goToHomepage = () => navigate("/");
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
+        setCurrentPage(1);
         navigate(`/admin/panel/${tab}`);
     };
 
@@ -140,10 +182,61 @@ const AdminPanel = () => {
                     break;
             }
             
-            alert(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
+            setSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} deleted successfully!`);
+            setTimeout(() => setSuccess(""), 3000);
         } catch (error) {
             console.error(`Error deleting ${type}:`, error.response?.data || error.message);
-            alert(`Failed to delete ${type}. Please try again.`);
+            setError(`Failed to delete ${type}. Please try again.`);
+            setTimeout(() => setError(""), 3000);
+        }
+    };
+
+    const viewDetails = (item, type) => {
+        setSelectedItem({ ...item, type });
+    };
+
+    const handleAdminUpdate = async (e) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+        
+        // Validate passwords match if changing password
+        if (adminDetails.newPassword && adminDetails.newPassword !== adminDetails.confirmPassword) {
+            setError("New passwords don't match!");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("adminToken");
+            const response = await axios.put(
+                "http://localhost:5000/api/admin/profile", 
+                {
+                    username: adminDetails.username,
+                    email: adminDetails.email,
+                    currentPassword: adminDetails.currentPassword,
+                    newPassword: adminDetails.newPassword
+                },
+                {
+                    headers: { Authorization: `Bearer ${token}` }
+                }
+            );
+            
+            if (response.data.success) {
+                setSuccess("Profile updated successfully!");
+                setTimeout(() => setSuccess(""), 3000);
+                setShowProfileModal(false);
+                // Clear password fields
+                setAdminDetails(prev => ({
+                    ...prev,
+                    currentPassword: "",
+                    newPassword: "",
+                    confirmPassword: ""
+                }));
+            }
+        } catch (error) {
+            console.error("Error updating profile:", error.response?.data || error.message);
+            setError(error.response?.data?.message || "Failed to update profile. Please try again.");
+            setTimeout(() => setError(""), 3000);
         }
     };
 
@@ -169,6 +262,37 @@ const AdminPanel = () => {
         }
     };
 
+    const renderPagination = (items) => {
+        const pageNumbers = [];
+        for (let i = 1; i <= Math.ceil(items.length / itemsPerPage); i++) {
+            pageNumbers.push(i);
+        }
+
+        if (pageNumbers.length <= 1) return null;
+
+        return (
+            <Pagination className="mt-3 justify-content-center">
+                <Pagination.Prev 
+                    onClick={() => setCurrentPage(prev => (prev > 1 ? prev - 1 : prev))} 
+                    disabled={currentPage === 1}
+                />
+                {pageNumbers.map(number => (
+                    <Pagination.Item
+                        key={number}
+                        active={number === currentPage}
+                        onClick={() => paginate(number)}
+                    >
+                        {number}
+                    </Pagination.Item>
+                ))}
+                <Pagination.Next 
+                    onClick={() => setCurrentPage(prev => (prev < pageNumbers.length ? prev + 1 : prev))} 
+                    disabled={currentPage === pageNumbers.length}
+                />
+            </Pagination>
+        );
+    };
+
     return (
         <div className={`admin-container ${sidebarOpen ? "" : "sidebar-collapsed"}`}>
             {/* Sidebar */}
@@ -191,18 +315,6 @@ const AdminPanel = () => {
                         </Nav.Link>
                     ))}
                 </Nav>
-                <div className="sidebar-footer">
-                    <Button 
-                        variant="link" 
-                        className="logout-btn"
-                        onClick={() => {
-                            localStorage.removeItem("adminToken");
-                            navigate("/admin");
-                        }}
-                    >
-                        <FaUserCircle /> {sidebarOpen && "Logout"}
-                    </Button>
-                </div>
             </div>
 
             {/* Main Content */}
@@ -215,11 +327,10 @@ const AdminPanel = () => {
                         </Button>
                         <Dropdown>
                             <Dropdown.Toggle variant="link" id="dropdown-user" className="user-dropdown">
-                                <FaUserCircle /> Admin
+                                <FaUserCircle /> {adminDetails.username || "Admin"}
                             </Dropdown.Toggle>
                             <Dropdown.Menu>
-                                <Dropdown.Item>Profile</Dropdown.Item>
-                                <Dropdown.Item>Settings</Dropdown.Item>
+                                <Dropdown.Item onClick={() => setShowProfileModal(true)}>Profile</Dropdown.Item>
                                 <Dropdown.Divider />
                                 <Dropdown.Item onClick={() => {
                                     localStorage.removeItem("adminToken");
@@ -231,6 +342,18 @@ const AdminPanel = () => {
                         </Dropdown>
                     </div>
                 </Navbar>
+
+                {/* Alerts */}
+                {error && (
+                    <Alert variant="danger" onClose={() => setError("")} dismissible className="m-3">
+                        {error}
+                    </Alert>
+                )}
+                {success && (
+                    <Alert variant="success" onClose={() => setSuccess("")} dismissible className="m-3">
+                        {success}
+                    </Alert>
+                )}
 
                 {/* Content Area */}
                 <div className="admin-content">
@@ -280,28 +403,6 @@ const AdminPanel = () => {
                                             </Card>
                                         </Col>
                                     </Row>
-
-                                    <Card className="mt-4">
-                                        <Card.Header>
-                                            <h5>Recent Activities</h5>
-                                        </Card.Header>
-                                        <Card.Body>
-                                            <Table striped hover responsive>
-                                                <thead>
-                                                    <tr>
-                                                        <th>#</th>
-                                                        <th>Activity</th>
-                                                        <th>User</th>
-                                                        <th>Date</th>
-                                                        <th>Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {/* Sample data can be added here */}
-                                                </tbody>
-                                            </Table>
-                                        </Card.Body>
-                                    </Card>
                                 </div>
                             )}
 
@@ -328,15 +429,23 @@ const AdminPanel = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {volunteers.map((volunteer, index) => (
+                                                {currentVolunteers.map((volunteer, index) => (
                                                     <tr key={volunteer._id}>
-                                                        <td>{index + 1}</td>
+                                                        <td>{indexOfFirstItem + index + 1}</td>
                                                         <td>{volunteer.name}</td>
                                                         <td>{volunteer.email}</td>
                                                         <td>{volunteer.state}</td>
                                                         <td>{volunteer.city}</td>
                                                         <td>{volunteer.number}</td>
                                                         <td>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => viewDetails(volunteer, "volunteer")}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
                                                             <Button 
                                                                 variant="danger" 
                                                                 size="sm"
@@ -349,6 +458,7 @@ const AdminPanel = () => {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        {renderPagination(volunteers)}
                                     </Card.Body>
                                 </Card>
                             )}
@@ -366,16 +476,26 @@ const AdminPanel = () => {
                                                     <th>#</th>
                                                     <th>Name</th>
                                                     <th>Email</th>
+                                                    <th>Amount</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {donors.map((donor, index) => (
+                                                {currentDonors.map((donor, index) => (
                                                     <tr key={donor._id}>
-                                                        <td>{index + 1}</td>
+                                                        <td>{indexOfFirstItem + index + 1}</td>
                                                         <td>{donor.name}</td>
                                                         <td>{donor.email}</td>
+                                                        <td>₹{donor.amount || 'N/A'}</td>
                                                         <td>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => viewDetails(donor, "donor")}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
                                                             <Button 
                                                                 variant="danger" 
                                                                 size="sm"
@@ -388,6 +508,7 @@ const AdminPanel = () => {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        {renderPagination(donors)}
                                     </Card.Body>
                                 </Card>
                             )}
@@ -413,13 +534,21 @@ const AdminPanel = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {contacts.map((contact, index) => (
+                                                {currentContacts.map((contact, index) => (
                                                     <tr key={contact._id}>
-                                                        <td>{index + 1}</td>
+                                                        <td>{indexOfFirstItem + index + 1}</td>
                                                         <td>{contact.name}</td>
                                                         <td>{contact.email}</td>
-                                                        <td>{contact.message}</td>
+                                                        <td>{contact.message.substring(0, 50)}...</td>
                                                         <td>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => viewDetails(contact, "message")}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
                                                             <Button 
                                                                 variant="danger" 
                                                                 size="sm"
@@ -432,6 +561,7 @@ const AdminPanel = () => {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        {renderPagination(contacts)}
                                     </Card.Body>
                                 </Card>
                             )}
@@ -457,20 +587,28 @@ const AdminPanel = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {programs.map((program, index) => (
+                                                {currentPrograms.map((program, index) => (
                                                     <tr key={program._id}>
-                                                        <td>{index + 1}</td>
+                                                        <td>{indexOfFirstItem + index + 1}</td>
                                                         <td>{program.title}</td>
-                                                        <td>{program.description}</td>
+                                                        <td>{program.description.substring(0, 50)}...</td>
                                                         <td>
                                                             <img 
-                                                                src={program.imageUrl} 
+                                                                src={`http://localhost:5000/uploads/${program.image}`} 
                                                                 alt={program.title} 
-                                                                width="100" 
+                                                                width="50" 
                                                                 className="img-thumbnail"
                                                             />
                                                         </td>
                                                         <td>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => viewDetails(program, "program")}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
                                                             <Button 
                                                                 variant="danger" 
                                                                 size="sm"
@@ -483,6 +621,7 @@ const AdminPanel = () => {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        {renderPagination(programs)}
                                     </Card.Body>
                                 </Card>
                             )}
@@ -509,24 +648,32 @@ const AdminPanel = () => {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {pledges.map((pledge, index) => (
+                                                {currentPledges.map((pledge, index) => (
                                                     <tr key={pledge._id}>
-                                                        <td>{index + 1}</td>
+                                                        <td>{indexOfFirstItem + index + 1}</td>
                                                         <td>{pledge.name}</td>
                                                         <td>{pledge.email}</td>
                                                         <td>{pledge.city}</td>
                                                         <td>
                                                             <ul className="list-unstyled">
                                                                 {Array.isArray(pledge.pledges) ? (
-                                                                    pledge.pledges.map((p, i) => (
+                                                                    pledge.pledges.slice(0, 2).map((p, i) => (
                                                                         <li key={i}>• {p}</li>
                                                                     ))
                                                                 ) : (
-                                                                    <li>• {pledge.pledges}</li>
+                                                                    <li>• {pledge.pledges.substring(0, 30)}...</li>
                                                                 )}
                                                             </ul>
                                                         </td>
                                                         <td>
+                                                            <Button 
+                                                                variant="info" 
+                                                                size="sm"
+                                                                className="me-2"
+                                                                onClick={() => viewDetails(pledge, "pledge")}
+                                                            >
+                                                                <FaEye />
+                                                            </Button>
                                                             <Button 
                                                                 variant="danger" 
                                                                 size="sm"
@@ -539,6 +686,7 @@ const AdminPanel = () => {
                                                 ))}
                                             </tbody>
                                         </Table>
+                                        {renderPagination(pledges)}
                                     </Card.Body>
                                 </Card>
                             )}
@@ -546,6 +694,244 @@ const AdminPanel = () => {
                     )}
                 </div>
             </div>
+
+            {/* Profile Modal */}
+            <Modal show={showProfileModal} onHide={() => setShowProfileModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>Edit Admin Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleAdminUpdate}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Username *</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={adminDetails.username}
+                                onChange={(e) => setAdminDetails({...adminDetails, username: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email Address *</Form.Label>
+                            <Form.Control 
+                                type="email" 
+                                value={adminDetails.email}
+                                onChange={(e) => setAdminDetails({...adminDetails, email: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Current Password (required for changes)</Form.Label>
+                            <Form.Control 
+                                type="password" 
+                                value={adminDetails.currentPassword}
+                                onChange={(e) => setAdminDetails({...adminDetails, currentPassword: e.target.value})}
+                                placeholder="Enter current password to make changes"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>New Password</Form.Label>
+                            <Form.Control 
+                                type="password" 
+                                value={adminDetails.newPassword}
+                                onChange={(e) => setAdminDetails({...adminDetails, newPassword: e.target.value})}
+                                placeholder="Enter new password (leave blank to keep current)"
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Confirm New Password</Form.Label>
+                            <Form.Control 
+                                type="password" 
+                                value={adminDetails.confirmPassword}
+                                onChange={(e) => setAdminDetails({...adminDetails, confirmPassword: e.target.value})}
+                                placeholder="Confirm new password"
+                            />
+                        </Form.Group>
+                        {error && <Alert variant="danger">{error}</Alert>}
+                        {success && <Alert variant="success">{success}</Alert>}
+                        <div className="d-flex justify-content-end">
+                            <Button variant="secondary" onClick={() => setShowProfileModal(false)} className="me-2">
+                                Cancel
+                            </Button>
+                            <Button variant="primary" type="submit">
+                                Save Changes
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal.Body>
+                <Modal.Footer className="justify-content-center">
+                    <small className="text-muted">Copyright © {new Date().getFullYear()} SwachhBharat. All rights reserved.</small>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Details View Modal */}
+            <Modal show={!!selectedItem} onHide={() => setSelectedItem(null)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>{selectedItem?.type?.toUpperCase()} DETAILS</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedItem && (
+                        <div className="details-container">
+                            {selectedItem.type === "volunteer" && (
+                                <>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Name:</div>
+                                        <div className="detail-value">{selectedItem.name || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Email:</div>
+                                        <div className="detail-value">{selectedItem.email || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Phone:</div>
+                                        <div className="detail-value">{selectedItem.number || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">City:</div>
+                                        <div className="detail-value">{selectedItem.city || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">State:</div>
+                                        <div className="detail-value">{selectedItem.state || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    {selectedItem.message && (
+                                        <div className="detail-item">
+                                            <div className="detail-label">Message:</div>
+                                            <div className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
+                                                {selectedItem.message}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                            {selectedItem.type === "donor" && (
+                                <>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Name:</div>
+                                        <div className="detail-value">{selectedItem.name || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Email:</div>
+                                        <div className="detail-value">{selectedItem.email || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Amount:</div>
+                                        <div className="detail-value">₹{selectedItem.amount || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Message:</div>
+                                        <div className="detail-value">{selectedItem.message || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                </>
+                            )}
+                            {selectedItem.type === "message" && (
+                                <>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Name:</div>
+                                        <div className="detail-value">{selectedItem.name || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Email:</div>
+                                        <div className="detail-value">{selectedItem.email || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Subject:</div>
+                                        <div className="detail-value">{selectedItem.subject || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Message:</div>
+                                        <div className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
+                                            {selectedItem.message}
+                                        </div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Date:</div>
+                                        <div className="detail-value">
+                                            {selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString() : <span className="empty">N/A</span>}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            {selectedItem.type === "program" && (
+                                <>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Title:</div>
+                                        <div className="detail-value">{selectedItem.title || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Description:</div>
+                                        <div className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
+                                            {selectedItem.description || <span className="empty">N/A</span>}
+                                        </div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Date:</div>
+                                        <div className="detail-value">{selectedItem.date || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Location:</div>
+                                        <div className="detail-value">{selectedItem.location || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    {selectedItem.image && (
+                                        <div className="detail-item">
+                                            <div className="detail-label">Image:</div>
+                                            <div className="detail-value">
+                                                <img 
+                                                    src={`http://localhost:5000/uploads/${selectedItem.image}`} 
+                                                    alt={selectedItem.title || "Program"} 
+                                                    className="img-fluid mt-2"
+                                                    style={{ maxHeight: '200px' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                            {selectedItem.type === "pledge" && (
+                                <>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Name:</div>
+                                        <div className="detail-value">{selectedItem.name || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Email:</div>
+                                        <div className="detail-value">{selectedItem.email || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">City:</div>
+                                        <div className="detail-value">{selectedItem.city || <span className="empty">N/A</span>}</div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Pledges:</div>
+                                        <div className="detail-value">
+                                            <ul className="list-unstyled">
+                                                {Array.isArray(selectedItem.pledges) ? (
+                                                    selectedItem.pledges.map((p, i) => (
+                                                        <li key={i}>• {p}</li>
+                                                    ))
+                                                ) : (
+                                                    <li>• {selectedItem.pledges || <span className="empty">N/A</span>}</li>
+                                                )}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div className="detail-item">
+                                        <div className="detail-label">Date:</div>
+                                        <div className="detail-value">
+                                            {selectedItem.createdAt ? new Date(selectedItem.createdAt).toLocaleString() : <span className="empty">N/A</span>}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setSelectedItem(null)}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
         </div>
     );
 };

@@ -1,9 +1,4 @@
 const express = require("express");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const dotenv = require("dotenv");
-const multer = require("multer");
-const Program = require("../models/Programme"); // Import the Program model
 const {
     loginAdmin,
     verifyAdminToken,
@@ -12,69 +7,54 @@ const {
     getContacts,
     getPledges,
     getAdminStats,
+    getAdminProfile,
+    updateAdminProfile
 } = require("../controllers/adminController");
 const { getPrograms, deleteProgram } = require("../controllers/programController");
-const path=require('path');
-const Volunteer = require("../models/Volunteer");
-const Donor = require("../models/Donor");
-const Contact = require("../models/Contact");
-
-dotenv.config();
+const multer = require("multer");
+const path = require("path");
 
 const router = express.Router();
 
 // Admin Login Route
 router.post("/login", loginAdmin);
 
-// Middleware to Verify Token
-const verifyToken = (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
+// Middleware to Verify Token - Updated to use verifyAdminToken from controller
+router.use(verifyAdminToken);
 
-    if (!token) {
-        return res.status(403).json({ success: false, message: "Access denied" });
-    }
-
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.admin = decoded;
-        next();
-    } catch (err) {
-        return res.status(401).json({ success: false, message: "Invalid token" });
-    }
-};
+// Profile Routes
+router.get("/profile", getAdminProfile);
+router.put("/profile", updateAdminProfile);
 
 // Protected Routes
-router.get("/dashboard", verifyToken, (req, res) => {
+router.get("/dashboard", (req, res) => {
     res.json({ success: true, message: "Welcome to the admin dashboard!" });
 });
 
-router.get("/stats", verifyAdminToken, getAdminStats);
-router.get("/volunteers", verifyAdminToken, getVolunteers);
-router.get("/donors", verifyAdminToken, getDonors);
-router.get("/contacts", verifyAdminToken, getContacts);
-router.get("/programs", verifyToken, getPrograms);
-router.get("/pledges", verifyToken, getPledges);
-router.delete("/programs/:id", verifyToken, deleteProgram);
+router.get("/stats", getAdminStats);
+router.get("/volunteers", getVolunteers);
+router.get("/donors", getDonors);
+router.get("/contacts", getContacts);
+router.get("/programs", getPrograms);
+router.get("/pledges", getPledges);
+router.delete("/programs/:id", deleteProgram);
 
-// Multer storage configuration
+// Multer configuration remains the same
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      const uploadPath = path.join(__dirname, '../uploads/');
-      cb(null, uploadPath); // Ensure this folder exists
+        const uploadPath = path.join(__dirname, '../uploads/');
+        cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-      cb(null, Date.now() + path.extname(file.originalname)); // Unique file name
+        cb(null, Date.now() + path.extname(file.originalname));
     }
-  });
+});
 
 const upload = multer({ storage: storage });
 
-// ✅ Route to Add a New Program
-router.post("/add-program", verifyToken, upload.single("image"), async (req, res) => {
+// Route to Add a New Program
+router.post("/add-program", upload.single("image"), async (req, res) => {
     try {
-        console.log("File Data:", req.file); // Debugging file upload
-        console.log("Request Body:", req.body);
-
         const { title, description } = req.body;
         const imagePath = req.file ? req.file.filename : null;
 
@@ -97,7 +77,8 @@ router.post("/add-program", verifyToken, upload.single("image"), async (req, res
     }
 });
 
-router.delete("/volunteers/:id", verifyToken, async (req, res) => {
+// Other routes remain the same
+router.delete("/volunteers/:id", async (req, res) => {
     try {
         await Volunteer.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: "Volunteer deleted successfully" });
@@ -106,7 +87,7 @@ router.delete("/volunteers/:id", verifyToken, async (req, res) => {
     }
 });
 
-router.delete("/donors/:id", verifyToken, async (req, res) => {
+router.delete("/donors/:id", async (req, res) => {
     try {
         await Donor.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: "Donor deleted successfully" });
@@ -115,7 +96,7 @@ router.delete("/donors/:id", verifyToken, async (req, res) => {
     }
 });
 
-router.delete("/contacts/:id", verifyToken, async (req, res) => {
+router.delete("/contacts/:id", async (req, res) => {
     try {
         await Contact.findByIdAndDelete(req.params.id);
         res.json({ success: true, message: "Contact message deleted successfully" });

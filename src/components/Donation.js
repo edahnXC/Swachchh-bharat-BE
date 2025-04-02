@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import '../styles.css';
 
 function Donation() {
@@ -9,7 +10,6 @@ function Donation() {
     name: '',
     email: '',
     phn: '',
-    pan_no: '',
     address: '',
     state_name: '',
     city: '',
@@ -17,14 +17,47 @@ function Donation() {
     trsn_id: '',
   });
 
+  useEffect(() => {
+    const fetchDonorInfo = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await axios.get('http://localhost:5000/api/donors/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        const donor = response.data;
+        setFormData(prev => ({
+          ...prev,
+          name: donor.name || '',
+          email: donor.email || '',
+          // Add other fields if available in your donor model
+        }));
+      } catch (error) {
+        console.error('Error fetching donor info:', error);
+      }
+    };
+
+    fetchDonorInfo();
+  }, []);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    navigate('/payment');
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('http://localhost:5000/api/donations', formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      navigate('/payment');
+    } catch (error) {
+      console.error('Donation submission error:', error);
+      alert('Failed to submit donation. Please try again.');
+    }
   };
 
   return (
@@ -44,6 +77,7 @@ function Donation() {
               required 
               onChange={handleChange}
               min="1"
+              value={formData.amt}
             />
           </div>
 
@@ -57,6 +91,7 @@ function Donation() {
                 placeholder="Your full name" 
                 required 
                 onChange={handleChange}
+                value={formData.name}
               />
             </div>
             <div className="donation-form-group">
@@ -68,6 +103,7 @@ function Donation() {
                 placeholder="your@email.com" 
                 required 
                 onChange={handleChange}
+                value={formData.email}
               />
             </div>
           </div>
@@ -82,19 +118,7 @@ function Donation() {
                 placeholder="+91 " 
                 required 
                 onChange={handleChange}
-              />
-            </div>
-            <div className="donation-form-group">
-              <label htmlFor="pan_no">PAN Number*</label>
-              <input 
-                type="text" 
-                id="pan_no" 
-                name="pan_no" 
-                placeholder="ABCDE1234F" 
-                required 
-                onChange={handleChange}
-                pattern="[A-Z]{5}[0-9]{4}[A-Z]{1}"
-                title="Enter valid PAN (e.g. ABCDE1234F)"
+                value={formData.phn}
               />
             </div>
           </div>
@@ -110,6 +134,7 @@ function Donation() {
               placeholder="House no., Building, Street" 
               required 
               onChange={handleChange}
+              value={formData.address}
             />
           </div>
 
@@ -127,7 +152,13 @@ function Donation() {
           <div className="donation-form-row">
             <div className="donation-form-group">
               <label htmlFor="state_name">State*</label>
-              <select id="state_name" name="state_name" required onChange={handleChange}>
+              <select 
+                id="state_name" 
+                name="state_name" 
+                required 
+                onChange={handleChange}
+                value={formData.state_name}
+              >
                 <option value="">Select State</option>
                 <option value="Gujarat">Gujarat</option>
                 <option value="Maharashtra">Maharashtra</option>
@@ -145,6 +176,7 @@ function Donation() {
                 placeholder="Your city" 
                 required 
                 onChange={handleChange}
+                value={formData.city}
               />
             </div>
           </div>
@@ -161,6 +193,7 @@ function Donation() {
                 onChange={handleChange}
                 pattern="[0-9]{6}"
                 title="6-digit PIN code"
+                value={formData.zip}
               />
             </div>
             <div className="donation-form-group">

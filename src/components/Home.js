@@ -1,26 +1,45 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles.css';
+import { Link } from 'react-router-dom';
+import GreenIndiaImage from '../Green-india.png';
 
-function Home() {
-  const navigate = useNavigate();
-
+const Home = () => {
   return (
-    <div className="hero-section">
-      <div className="hero-content">
-        <h1>Join the Clean India Movement</h1>
-        <p>Together we can make India cleaner and greener</p>
-        <div className="hero-buttons">
-          <button className="primary-btn" onClick={() => navigate("/pledge")}>
-            Take a Pledge
-          </button>
-          <button className="secondary-btn" onClick={() => navigate("/volunteer")}>
-            Become a Volunteer
-          </button>
+    <div className="home-page">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <h1>Join the Swachh Bharat Mission</h1>
+          <p>Be part of India's largest cleanliness movement and help create a cleaner, greener future for our nation.</p>
+          <div className="hero-buttons">
+            <Link to="/pledge" className="primary-btn">Take the Pledge</Link>
+            <Link to="/volunteer" className="secondary-btn">Become a Volunteer</Link>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Green India Section */}
+      <section className="green-india-section">
+        <div className="container green-india-container">
+          <div className="green-india-image">
+            <img src={GreenIndiaImage} alt="Green India Clean India" />
+          </div>
+          <div className="green-india-content">
+            <h2>Green India, Clean India</h2>
+            <p>
+              Our mission is to create a cleaner and greener India by promoting sustainable waste management practices, 
+              increasing green cover, and fostering environmental awareness among citizens.
+            </p>
+            <p>
+              Join us in our efforts to make India free from open defecation and achieve 100% scientific waste management.
+            </p>
+            <Link to="/programmes" className="primary-btn">Learn About Our Programmes</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Other sections can be added here */}
     </div>
   );
-}
+};
 
 export default Home;

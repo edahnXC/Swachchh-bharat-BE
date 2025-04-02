@@ -27,8 +27,17 @@ const ProtectedRoute = ({ element, isAuthenticated }) => {
   return isAuthenticated ? element : <DonorLogin />;
 };
 
+// Update your AdminProtectedRoute component in App.js
 const AdminProtectedRoute = ({ element, isAdmin }) => {
-  return isAdmin ? element : <AdminLogin />;
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+      if (!isAdmin) {
+          navigate("/admin");
+      }
+  }, [isAdmin, navigate]);
+
+  return isAdmin ? element : null;
 };
 
 function App() {
@@ -59,22 +68,6 @@ function App() {
       {/* Don't show top bar and nav for admin routes */}
       {!isAdminRoute && (
         <>
-          {/* Top Bar */}
-          {/* <div className="top-bar">
-            <div className="container">
-              <div className="contact-info">
-                <span><FaPhone /> +91 9876543210</span><br />
-                <span><FaEnvelope /> contact@swachhbharat.com</span>
-              </div>
-              <div className="social-icons">
-                <a href="#"><FaFacebookF /></a>
-                <a href="#"><FaTwitter /></a>
-                <a href="#"><FaInstagram /></a>
-                <a href="#"><FaLinkedinIn /></a>
-              </div>
-            </div>
-          </div> */}
-
           {/* Main Navigation */}
           <nav className="navbar">
             <div className="container">
@@ -121,10 +114,27 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/admin" element={<AdminLogin setIsAdmin={setIsAdmin} />} />
-          <Route element={<AdminProtectedRoute element={<AdminLayout />} isAdmin={isAdmin} />}>
-            <Route path="/admin/panel/*" element={<AdminPanel />} />
-            <Route path="/admin/add-program" element={<AddProgram />} />
+          
+          {/* Nested Admin Routes */}
+          <Route 
+            path="/admin/panel" 
+            element={<AdminProtectedRoute element={<AdminLayout />} isAdmin={isAdmin} />}
+          >
+            <Route index element={<AdminPanel />} />
+            <Route path="dashboard" element={<AdminPanel />} />
+            <Route path="volunteers" element={<AdminPanel />} />
+            <Route path="donors" element={<AdminPanel />} />
+            <Route path="contacts" element={<AdminPanel />} />
+            <Route path="programs" element={<AdminPanel />} />
+            <Route path="pledges" element={<AdminPanel />} />
+            <Route path="reports" element={<AdminPanel />} />
           </Route>
+          
+          {/* Separate route for add-program to ensure it's outside the panel layout if needed */}
+          <Route 
+            path="/admin/add-program" 
+            element={<AdminProtectedRoute element={<AddProgram />} isAdmin={isAdmin} />} 
+          />
         </Routes>
       </main>
 

@@ -1,15 +1,8 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
-import AdminPanel from "./AdminPanel";
+import { Outlet } from "react-router-dom";// components/AdminLayout.js
 
 const AdminLayout = () => {
-  return (
-    <div className="admin-app">
-      <AdminPanel>
-        <Outlet />
-      </AdminPanel>
-    </div>
-  );
+  return <Outlet />;
 };
 
 export default AdminLayout;

@@ -22,8 +22,13 @@ connectDB()
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: process.env.CLIENT_URL || "http://localhost:3000", credentials: true }));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+// Update your CORS configuration in server.js
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  credentials: true, // This is important for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Import Routes
 const authRoutes = require("./routes/authRoutes");
