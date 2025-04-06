@@ -1,84 +1,204 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import '../styles.css';
 
 function Donation() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({
-    amt: '',
+    amount: '',
     name: '',
     email: '',
-    phn: '',
+    phone: '',
     address: '',
-    state_name: '',
+    country: '',
+    state: '',
     city: '',
-    zip: '',
-    trsn_id: '',
+    postalCode: '',
   });
 
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Handle returning from payment page
   useEffect(() => {
-    const fetchDonorInfo = async () => {
+    if (location.state?.error) {
+      setError(location.state.error);
+    }
+    if (location.state?.formData) {
+      setFormData(prev => ({
+        ...prev,
+        ...location.state.formData
+      }));
+    }
+  }, [location.state]);
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setLoadingCountries(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        const response = await axios.get('http://localhost:5000/api/donors/me', {
-          headers: { Authorization: `Bearer ${token}` }
+        const response = await axios.get('http://localhost:5000/api/public/countries', {
+          timeout: 10000
         });
-        
-        const donor = response.data;
-        setFormData(prev => ({
-          ...prev,
-          name: donor.name || '',
-          email: donor.email || '',
-          // Add other fields if available in your donor model
-        }));
+        setCountries(response.data.data || []);
       } catch (error) {
-        console.error('Error fetching donor info:', error);
+        console.error('Error fetching countries:', error);
+        setError('Failed to load countries. Please refresh the page.');
+      } finally {
+        setLoadingCountries(false);
       }
     };
-
-    fetchDonorInfo();
+    fetchCountries();
   }, []);
 
+  // Fetch states when country changes
+  useEffect(() => {
+    const fetchStates = async () => {
+      if (!formData.country) {
+        setStates([]);
+        return;
+      }
+      
+      setLoadingStates(true);
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/public/states?country=${formData.country}`,
+          { timeout: 10000 }
+        );
+        setStates(response.data.data || []);
+      } catch (error) {
+        console.error('Error fetching states:', error);
+        setError('Failed to load states for selected country.');
+      } finally {
+        setLoadingStates(false);
+      }
+    };
+    
+    if (formData.country) {
+      fetchStates();
+    }
+  }, [formData.country]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: value,
+      ...(name === 'country' ? { state: '' } : {})
+    }));
+    if (error) setError(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/donations', formData, {
-        headers: { Authorization: `Bearer ${token}` }
+      const donationAmount = parseFloat(formData.amount);
+      if (!donationAmount || donationAmount < 100) {
+        throw new Error('Minimum donation amount is ₹100');
+      }
+
+      // Validate all required fields
+      const requiredFields = ['name', 'email', 'phone', 'country', 'state', 'city', 'postalCode'];
+      const missingFields = requiredFields.filter(field => !formData[field]);
+      
+      if (missingFields.length > 0) {
+        throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+      }
+
+      // Store form data in session storage as fallback
+      sessionStorage.setItem('donationFormData', JSON.stringify({
+        ...formData,
+        amount: donationAmount
+      }));
+
+      const response = await axios.post(
+        'http://localhost:5000/api/donors/donate',
+        {
+          ...formData,
+          amount: donationAmount
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
+        }
+      );
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Donation failed');
+      }
+
+      navigate('/payment', { 
+        state: { 
+          donationId: response.data.data.donationId,
+          orderId: response.data.data.orderId,
+          amount: response.data.data.amount,
+          email: formData.email,
+          name: formData.name,
+          phone: formData.phone,
+          formData: {
+            ...formData,
+            amount: donationAmount
+          }
+        },
+        replace: true
       });
-      navigate('/payment');
     } catch (error) {
-      console.error('Donation submission error:', error);
-      alert('Failed to submit donation. Please try again.');
+      console.error("Donation failed:", error);
+      let errorMsg = 'Donation failed. Please try again.';
+      
+      if (error.response) {
+        errorMsg = error.response.data.message || errorMsg;
+      } else if (error.request) {
+        errorMsg = 'Network error. Please check your connection.';
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      
+      setError(errorMsg);
+      sessionStorage.removeItem('donationFormData');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="donation-page">
       <div className="donation-container">
-        <h2>Select the Amount You Wish to Donate</h2>
+        <h2>Make a Donation</h2>
         <p>Your contribution helps us make a difference in our community</p>
         
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
         <form className="donation-form" onSubmit={handleSubmit}>
           <div className="donation-form-group">
-            <label htmlFor="amt">Donation Amount (₹)*</label>
+            <label htmlFor="amount">Donation Amount (₹)*</label>
             <input 
               type="number" 
-              id="amt" 
-              name="amt" 
+              id="amount" 
+              name="amount" 
               placeholder="Enter amount" 
               required 
               onChange={handleChange}
-              min="1"
-              value={formData.amt}
+              min="100"
+              step="any"
+              value={formData.amount}
             />
+            <small>Minimum donation: ₹100</small>
           </div>
 
           <div className="donation-form-row">
@@ -108,19 +228,19 @@ function Donation() {
             </div>
           </div>
 
-          <div className="donation-form-row">
-            <div className="donation-form-group">
-              <label htmlFor="phn">Phone Number*</label>
-              <input 
-                type="tel" 
-                id="phn" 
-                name="phn" 
-                placeholder="+91 " 
-                required 
-                onChange={handleChange}
-                value={formData.phn}
-              />
-            </div>
+          <div className="donation-form-group">
+            <label htmlFor="phone">Phone Number*</label>
+            <input 
+              type="tel" 
+              id="phone" 
+              name="phone" 
+              placeholder="+91 " 
+              required 
+              onChange={handleChange}
+              pattern="[0-9]{10}"
+              title="10 digit phone number"
+              value={formData.phone}
+            />
           </div>
 
           <h3 className="section-title">Address Details</h3>
@@ -138,35 +258,56 @@ function Donation() {
             />
           </div>
 
-          <div className="donation-form-group">
-            <label htmlFor="address2">Address Line 2 (Optional)</label>
-            <input 
-              type="text" 
-              id="address2" 
-              name="address2" 
-              placeholder="Area, Landmark" 
-              onChange={handleChange}
-            />
+          <div className="donation-form-row">
+            <div className="donation-form-group">
+              <label htmlFor="country">Country*</label>
+              <select
+                id="country"
+                name="country"
+                required
+                onChange={handleChange}
+                value={formData.country}
+                disabled={loadingCountries}
+              >
+                <option value="">Select Country</option>
+                {loadingCountries ? (
+                  <option disabled>Loading countries...</option>
+                ) : (
+                  countries.map(country => (
+                    <option key={country._id} value={country._id}>
+                      {country.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="donation-form-group">
+              <label htmlFor="state">State*</label>
+              <select
+                id="state"
+                name="state"
+                required
+                onChange={handleChange}
+                value={formData.state}
+                disabled={!formData.country || loadingStates}
+              >
+                <option value="">Select State</option>
+                {loadingStates ? (
+                  <option disabled>Loading states...</option>
+                ) : states.length > 0 ? (
+                  states.map(state => (
+                    <option key={state._id} value={state._id}>
+                      {state.name}
+                    </option>
+                  ))
+                ) : (
+                  <option disabled>No states available for selected country</option>
+                )}
+              </select>
+            </div>
           </div>
 
           <div className="donation-form-row">
-            <div className="donation-form-group">
-              <label htmlFor="state_name">State*</label>
-              <select 
-                id="state_name" 
-                name="state_name" 
-                required 
-                onChange={handleChange}
-                value={formData.state_name}
-              >
-                <option value="">Select State</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Tamil Nadu">Tamil Nadu</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-              </select>
-            </div>
             <div className="donation-form-group">
               <label htmlFor="city">City*</label>
               <input 
@@ -179,39 +320,29 @@ function Donation() {
                 value={formData.city}
               />
             </div>
-          </div>
-
-          <div className="donation-form-row">
             <div className="donation-form-group">
               <label htmlFor="zip">ZIP / Postal Code*</label>
               <input 
                 type="text" 
-                id="zip" 
-                name="zip" 
+                id="postalCode" 
+                name="postalCode" 
                 placeholder="PIN code" 
                 required 
                 onChange={handleChange}
                 pattern="[0-9]{6}"
                 title="6-digit PIN code"
-                value={formData.zip}
-              />
-            </div>
-            <div className="donation-form-group">
-              <label htmlFor="country">Country</label>
-              <input 
-                type="text" 
-                id="country" 
-                name="country" 
-                value="India" 
-                disabled 
-                className="disabled-field"
+                value={formData.postalCode}
               />
             </div>
           </div>
 
-          <button type="submit" className="submit-donation-btn">
-            Proceed to Payment
-            <i className="fas fa-arrow-right" style={{ marginLeft: '8px' }}></i>
+          <button 
+            type="submit" 
+            className="submit-donation-btn"
+            disabled={loading}
+          >
+            {loading ? 'Processing...' : 'Proceed to Payment'}
+            {!loading && <i className="fas fa-arrow-right" style={{ marginLeft: '8px' }}></i>}
           </button>
         </form>
       </div>

@@ -1,115 +1,216 @@
 const express = require("express");
-const {
-    loginAdmin,
-    verifyAdminToken,
-    getVolunteers,
-    getDonors,
-    getContacts,
-    getPledges,
-    getAdminStats,
-    getAdminProfile,
-    updateAdminProfile
-} = require("../controllers/adminController");
-const { getPrograms, deleteProgram } = require("../controllers/programController");
+const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const crypto = require("crypto");
+const razorpay = require("razorpay");
+const {
+  loginAdmin,
+  verifyAdminToken,
+  getVolunteers,
+  getDonors,
+  getContacts,
+  getPledges,
+  getAdminStats,
+  getAdminProfile,
+  updateAdminProfile,
+  generateReports,
+  getCountries,
+  createCountry,
+  updateCountry,
+  deleteCountry,
+  getStates,
+  getStateById,
+  createState,
+  updateState,
+  deleteState,
+  deleteVolunteer,
+  deleteDonor,
+  deleteContact,
+  createDonation,
+  verifyPayment
+} = require("../controllers/adminController");
 
-const router = express.Router();
+const {
+  addProgram,
+  getPrograms,
+  updateProgram,
+  deleteProgram
+} = require("../controllers/programController");
 
-// Admin Login Route
+// Initialize Razorpay
+const razorpayInstance = new razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_Xal312m1f8Pugg',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'SXXWWrIEiabSyA3nK4ipQkpN'
+});
+
+// Configure storage for program images
+const programStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads/programs'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, `program-${Date.now()}${path.extname(file.originalname)}`);
+  }
+});
+
+// File filter for program images
+const programFileFilter = (req, file, cb) => {
+  const filetypes = /jpeg|jpg|png|gif/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files (jpeg, jpg, png, gif) are allowed!'), false);
+  }
+};
+
+// Configure multer for program image uploads
+const uploadProgramImage = multer({
+  storage: programStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: programFileFilter
+});
+
+// ADMIN AUTHENTICATION
 router.post("/login", loginAdmin);
 
-// Middleware to Verify Token - Updated to use verifyAdminToken from controller
+// Verify admin token middleware for all routes below
 router.use(verifyAdminToken);
 
-// Profile Routes
+// ADMIN PROFILE ROUTES
 router.get("/profile", getAdminProfile);
 router.put("/profile", updateAdminProfile);
 
-// Protected Routes
+// DASHBOARD ROUTES
 router.get("/dashboard", (req, res) => {
-    res.json({ success: true, message: "Welcome to the admin dashboard!" });
+  res.json({ success: true, message: "Welcome to the admin dashboard!" });
 });
 
-router.get("/stats", getAdminStats);
+// PROGRAM ROUTES
+router.post("/programs", uploadProgramImage.single("image"), addProgram);
+router.get("/programs", getPrograms);
+router.put("/programs/:id", uploadProgramImage.single("image"), updateProgram);
+router.delete("/programs/:id", deleteProgram);
+
+// DATA ROUTES
 router.get("/volunteers", getVolunteers);
 router.get("/donors", getDonors);
 router.get("/contacts", getContacts);
-router.get("/programs", getPrograms);
 router.get("/pledges", getPledges);
-router.delete("/programs/:id", deleteProgram);
 
-// Multer configuration remains the same
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '../uploads/');
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
+// DONATION ROUTES
+router.post("/donations", createDonation);
+router.post("/verify-payment", verifyPayment);
+
+// Razorpay Routes
+router.post('/donations/create-order', async (req, res) => {
+  try {
+    const { amount, currency, receipt } = req.body;
+    
+    const options = {
+      amount: amount * 100, // Convert to paise
+      currency: currency || 'INR',
+      receipt: receipt,
+      payment_capture: 1
+    };
+
+    const order = await razorpayInstance.orders.create(options);
+    
+    res.json({
+      success: true,
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency
+    });
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating order',
+      error: error.message
+    });
+  }
 });
 
-const upload = multer({ storage: storage });
+router.post('/donations/verify-payment', async (req, res) => {
+  try {
+    const { donationId, razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+    
+    // Verify payment signature
+    const generated_signature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || razorpayInstance.key_secret)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
 
-// Route to Add a New Program
-router.post("/add-program", upload.single("image"), async (req, res) => {
-    try {
-        const { title, description } = req.body;
-        const imagePath = req.file ? req.file.filename : null;
-
-        if (!title || !description || !imagePath) {
-            return res.status(400).json({ success: false, message: "All fields are required!" });
-        }
-
-        const newProgram = new Program({
-            title,
-            description,
-            image: imagePath,
-        });
-
-        await newProgram.save();
-        res.json({ success: true, message: "Program added successfully!" });
-
-    } catch (error) {
-        console.error("Error adding program:", error);
-        res.status(500).json({ success: false, message: "Error adding program" });
+    if (generated_signature !== razorpay_signature) {
+      return res.status(400).json({
+        success: false,
+        message: 'Payment verification failed'
+      });
     }
+
+    // Update donation record
+    const donation = await Donor.findByIdAndUpdate(
+      donationId,
+      { 
+        paymentStatus: 'completed',
+        paymentId: razorpay_payment_id,
+        paymentDate: new Date()
+      },
+      { new: true }
+    );
+
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Donation record not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Payment verified successfully',
+      donation
+    });
+  } catch (error) {
+    console.error('Payment verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error verifying payment',
+      error: error.message
+    });
+  }
 });
 
-// Other routes remain the same
-router.delete("/volunteers/:id", async (req, res) => {
-    try {
-        await Volunteer.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: "Volunteer deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error deleting volunteer" });
-    }
-});
+// REPORTING ROUTES
+router.get("/reports", generateReports);
+router.get("/stats", getAdminStats);
 
-router.delete("/donors/:id", async (req, res) => {
-    try {
-        await Donor.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: "Donor deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error deleting donor" });
-    }
-});
+// Country Routes
+router.route('/countries')
+  .get(getCountries)
+  .post(createCountry);
 
-router.delete("/contacts/:id", async (req, res) => {
-    try {
-        await Contact.findByIdAndDelete(req.params.id);
-        res.json({ success: true, message: "Contact message deleted successfully" });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Error deleting contact message" });
-    }
-});
+router.route('/countries/:id')
+  .put(updateCountry)
+  .delete(deleteCountry);
 
-router.post("/upload", upload.single("file"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded!" });
-    }
-    res.json({ message: "File uploaded successfully!", filePath: `/uploads/${req.file.filename}` });
-});
+// State Routes
+router.route('/states')
+  .get(getStates)
+  .post(createState);
+
+router.route('/states/:id')
+  .get(getStateById)
+  .put(updateState)
+  .delete(deleteState);
+
+// DELETE OPERATIONS
+router.delete("/volunteers/:id", deleteVolunteer);
+router.delete("/donors/:id", deleteDonor);
+router.delete("/contacts/:id", deleteContact);
 
 module.exports = router;

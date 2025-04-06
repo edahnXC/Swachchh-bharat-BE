@@ -3,92 +3,153 @@ import axios from "axios";
 import "./AddProgram.css";
 
 function AddProgram() {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    image: null
+  });
   const [preview, setPreview] = useState(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState({ text: "", type: "" });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    setImage(file);
-    setPreview(URL.createObjectURL(file)); // Live preview
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+      if (!validTypes.includes(file.type)) {
+        setMessage({ text: "Only JPG, PNG, or GIF images are allowed", type: "error" });
+        return;
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ text: "Image size must be less than 5MB", type: "error" });
+        return;
+      }
+
+      setFormData(prev => ({ ...prev, image: file }));
+      setPreview(URL.createObjectURL(file));
+      setMessage({ text: "", type: "" });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setMessage({ text: "", type: "" });
 
-    if (!image) {
-      setMessage("⚠️ Please select an image!");
+    if (!formData.image) {
+      setMessage({ text: "Please select an image", type: "error" });
+      setIsLoading(false);
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("image", image);
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("description", formData.description);
+    data.append("image", formData.image);
 
     try {
-        await axios.post(  // Removed 'const res ='
-            "http://localhost:5000/api/admin/add-program",
-            formData,
-            { headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${localStorage.getItem("adminToken")}` } }
-        );
+      const response = await axios.post(
+        "http://localhost:5000/api/admin/programs",
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("adminToken")}`
+          }
+        }
+      );
 
-        setMessage("✅ Program added successfully!");
-        setTitle("");
-        setDescription("");
-        setImage(null);
-        setPreview(null);
-        document.getElementById("fileInput").value = "";
+      setMessage({ 
+        text: "Program added successfully!", 
+        type: "success" 
+      });
+      resetForm();
     } catch (error) {
-        console.error(error);
-        setMessage("❌ Error adding program");
+      console.error("Error:", error);
+      const errorMsg = error.response?.data?.message || 
+                      error.message || 
+                      "Failed to add program";
+      setMessage({ text: errorMsg, type: "error" });
+    } finally {
+      setIsLoading(false);
     }
-};
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      image: null
+    });
+    setPreview(null);
+    const fileInput = document.getElementById("programImage");
+    if (fileInput) fileInput.value = "";
+  };
 
   return (
     <div className="add-program-container">
-      <h2 className="heading">Add a New Program</h2>
-      {message && <p className="message">{message}</p>}
-      <form onSubmit={handleSubmit} className="add-program-form">
+      <h2>Add New Program</h2>
+      
+      {message.text && (
+        <div className={`message ${message.type}`}>
+          {message.text}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label>Title</label>
+          <label htmlFor="title">Title</label>
           <input
+            id="title"
             type="text"
-            placeholder="Enter Program Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
             required
-            className="input-field"
+            placeholder="Enter program title"
           />
         </div>
 
         <div className="form-group">
-          <label>Description</label>
+          <label htmlFor="description">Description</label>
           <textarea
-            placeholder="Provide a brief description..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
             required
-            className="input-field"
+            rows="5"
+            placeholder="Enter program description"
           />
         </div>
 
         <div className="form-group">
-          <label>Upload Image</label>
+          <label htmlFor="programImage">Program Image</label>
           <input
+            id="programImage"
             type="file"
             accept="image/*"
-            id="fileInput"
             onChange={handleImageChange}
             required
-            className="file-input"
           />
-          {preview && <img src={preview} alt="Preview" className="image-preview" />}
+          {preview && (
+            <div className="image-preview">
+              <img src={preview} alt="Preview" />
+            </div>
+          )}
         </div>
 
-        <button type="submit" className="submit-btn">➕ Add Programme</button>
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? "Adding..." : "Add Program"}
+        </button>
       </form>
     </div>
   );

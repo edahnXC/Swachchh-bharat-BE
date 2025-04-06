@@ -6,68 +6,106 @@
     box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-.heading {
+h2 {
     font-size: 1.8rem;
     color: #333;
-    margin-bottom: 15px;
+    margin: 0;
 }
 
 .message {
-    font-size: 1rem;
-    color: green;
-    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
 }
 
-.add-program-form {
+.message.success {
+    background: #e6ffee;
+    color: #2a7a2a;
+}
+
+.message.error {
+    background: #ffe6e6;
+    color: #cc0000;
+}
+
+form {
     display: flex;
     flex-direction: column;
+    gap: 20px;
 }
 
 .form-group {
     text-align: left;
-    margin-bottom: 15px;
 }
 
 label {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
+    margin-bottom: 8px;
     display: block;
-    margin-bottom: 5px;
 }
 
-.input-field {
+input[type="text"],
+textarea {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
     font-size: 1rem;
+    transition: border-color 0.3s;
 }
 
-.file-input {
-    border: none;
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+input[type="file"] {
+    padding: 8px 0;
 }
 
 .image-preview {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    margin-top: 10px;
+    margin-top: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 250px;
+    display: flex;
+    justify-content: center;
+}
+
+.image-preview img {
+    max-width: 100%;
+    height: auto;
+    max-height: 250px;
+    object-fit: contain;
     border-radius: 8px;
 }
 
-.submit-btn {
+button[type="submit"] {
     background: #007bff;
     color: white;
     border: none;
-    padding: 12px;
+    padding: 14px;
     font-size: 1rem;
-    border-radius: 5px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s;
+    margin-top: 10px;
 }
 
-.submit-btn:hover {
+button[type="submit"]:hover {
     background: #0056b3;
+    transform: translateY(-1px);
+}
+
+button[type="submit"]:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+    transform: none;
 }

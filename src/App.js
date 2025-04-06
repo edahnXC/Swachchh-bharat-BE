@@ -4,8 +4,8 @@ import "./styles.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { 
   FaPhone, FaEnvelope, FaFacebookF, FaTwitter, 
-  FaInstagram, FaLinkedinIn, FaYoutube, 
-  FaMapMarkerAlt, FaHandHoldingHeart, FaSignOutAlt 
+  FaInstagram, FaYoutube, 
+  FaMapMarkerAlt, FaHandHoldingHeart
 } from "react-icons/fa";
 
 // Import Components
@@ -13,8 +13,6 @@ import Home from "./components/Home";
 import Programmes from "./components/Programmes";
 import Volunteer from "./components/Volunteer";
 import VolunteerForm from "./components/VolunteerForm";
-import DonorLogin from "./components/DonorLogin";
-import DonorSignup from "./components/DonorSignup";
 import Pledge from "./pages/PledgePage";
 import Contact from "./components/Contact";
 import Donation from "./components/Donation";
@@ -22,19 +20,17 @@ import AdminLogin from "./components/AdminLogin";
 import AdminPanel from "./components/AdminPanel";
 import AddProgram from "./components/AddProgram";
 import AdminLayout from "./components/AdminLayout";
+import Payment from "./components/Payment";
+import PaymentSuccess from "./components/PaymentSuccess";
+import TermsAndConditions from './components/TermsAndConditions';
 
-const ProtectedRoute = ({ element, isAuthenticated }) => {
-  return isAuthenticated ? element : <DonorLogin />;
-};
-
-// Update your AdminProtectedRoute component in App.js
 const AdminProtectedRoute = ({ element, isAdmin }) => {
   const navigate = useNavigate();
   
   useEffect(() => {
-      if (!isAdmin) {
-          navigate("/admin");
-      }
+    if (!isAdmin) {
+      navigate("/admin");
+    }
   }, [isAdmin, navigate]);
 
   return isAdmin ? element : null;
@@ -43,59 +39,52 @@ const AdminProtectedRoute = ({ element, isAdmin }) => {
 function App() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Scroll to top on route change
   useEffect(() => {
-    setIsAuthenticated(!!localStorage.getItem("token"));
-    setIsAdmin(!!localStorage.getItem("adminToken"));
-  }, []);
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Check admin authentication status
+  useEffect(() => {
+    const adminToken = localStorage.getItem("adminToken");
+    setIsAdmin(!!adminToken);
+  }, [location.pathname]);
 
   const isAdminRoute = location.pathname.startsWith("/admin");
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    setIsAuthenticated(false);
-    navigate("/donor-login");
-  };
-
-  const redirectToDonation = () => {
-    isAuthenticated ? navigate("/donation") : navigate("/donor-login");
+  const handleAdminLogout = () => {
+    localStorage.removeItem("adminToken");
+    setIsAdmin(false);
+    navigate("/admin");
   };
 
   return (
     <div className={`app-container ${isAdminRoute ? "admin-route" : ""}`}>
-      {/* Don't show top bar and nav for admin routes */}
+      {/* Main Navigation - Only for non-admin routes */}
       {!isAdminRoute && (
-        <>
-          {/* Main Navigation */}
-          <nav className="navbar">
-            <div className="container">
-              <Link to="/" className="logo">
-                Swachh Bharat
-              </Link>
-              
-              <ul className="nav-links">
-                <li><Link to="/">Home</Link></li>
-                <li><Link to="/programmes">Programmes</Link></li>
-                <li><Link to="/volunteer">Volunteer</Link></li>
-                <li><Link to="/pledge">Take a Pledge</Link></li>
-                <li><Link to="/contact">Contact</Link></li>
-              </ul>
+        <nav className="navbar">
+          <div className="container">
+            <Link to="/" className="logo">
+              Swachh Bharat
+            </Link>
+            
+            <ul className="nav-links">
+              <li><Link to="/">Home</Link></li>
+              <li><Link to="/programmes">Programmes</Link></li>
+              <li><Link to="/volunteer">Volunteer</Link></li>
+              <li><Link to="/pledge">Take a Pledge</Link></li>
+              <li><Link to="/contact">Contact</Link></li>
+            </ul>
 
-              <div className="nav-buttons">
-                <button className="donate-btn" onClick={redirectToDonation}>
-                  <FaHandHoldingHeart /> Donate Now
-                </button>
-                {isAuthenticated && (
-                  <button className="logged-btn" onClick={handleLogout}>
-                    <FaSignOutAlt /> Logout
-                  </button>
-                )}
-              </div>
+            <div className="nav-buttons">
+              <Link to="/donation" className="donate-btn">
+                <FaHandHoldingHeart /> Donate Now
+              </Link>
             </div>
-          </nav>
-        </>
+          </div>
+        </nav>
       )}
 
       {/* Main Content */}
@@ -106,19 +95,29 @@ function App() {
           <Route path="/programmes" element={<Programmes />} />
           <Route path="/volunteer" element={<Volunteer />} />
           <Route path="/volunteer-form" element={<VolunteerForm />} />
-          <Route path="/donor-login" element={<DonorLogin setIsAuthenticated={setIsAuthenticated} />} />
-          <Route path="/donor-signup" element={<DonorSignup setIsAuthenticated={setIsAuthenticated} />} />
           <Route path="/pledge" element={<Pledge />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/donation" element={<ProtectedRoute element={<Donation />} isAuthenticated={isAuthenticated} />} />
-          
+          <Route path="/donation" element={<Donation />} />
+          <Route path="/donate" element={<Donation />}/>
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+
           {/* Admin Routes */}
-          <Route path="/admin" element={<AdminLogin setIsAdmin={setIsAdmin} />} />
+          <Route 
+            path="/admin" 
+            element={<AdminLogin setIsAdmin={setIsAdmin} />} 
+          />
           
           {/* Nested Admin Routes */}
           <Route 
             path="/admin/panel" 
-            element={<AdminProtectedRoute element={<AdminLayout />} isAdmin={isAdmin} />}
+            element={
+              <AdminProtectedRoute 
+                element={<AdminLayout onLogout={handleAdminLogout} />} 
+                isAdmin={isAdmin} 
+              />
+            }
           >
             <Route index element={<AdminPanel />} />
             <Route path="dashboard" element={<AdminPanel />} />
@@ -127,18 +126,24 @@ function App() {
             <Route path="contacts" element={<AdminPanel />} />
             <Route path="programs" element={<AdminPanel />} />
             <Route path="pledges" element={<AdminPanel />} />
+            <Route path="countries" element={<AdminPanel />} />
+            <Route path="states" element={<AdminPanel />} />
             <Route path="reports" element={<AdminPanel />} />
           </Route>
           
-          {/* Separate route for add-program to ensure it's outside the panel layout if needed */}
           <Route 
             path="/admin/add-program" 
-            element={<AdminProtectedRoute element={<AddProgram />} isAdmin={isAdmin} />} 
+            element={
+              <AdminProtectedRoute 
+                element={<AddProgram />} 
+                isAdmin={isAdmin} 
+              />
+            } 
           />
         </Routes>
       </main>
 
-      {/* Don't show footer for admin routes */}
+      {/* Footer - Only for non-admin routes */}
       {!isAdminRoute && (
         <footer>
           <div className="footer-container">
@@ -162,6 +167,7 @@ function App() {
                   <li><Link to="/volunteer">Volunteer</Link></li>
                   <li><Link to="/pledge">Take a Pledge</Link></li>
                   <li><Link to="/contact">Contact Us</Link></li>
+                  <li><Link to="/terms-and-conditions">Terms & Conditions</Link></li>
                 </ul>
               </div>
               

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import GreenIndiaImage from '../Green-india.png';
+import "../styles.css";
 
 const Home = () => {
   return (
@@ -32,12 +33,13 @@ const Home = () => {
             <p>
               Join us in our efforts to make India free from open defecation and achieve 100% scientific waste management.
             </p>
-            <Link to="/programmes" className="primary-btn">Learn About Our Programmes</Link>
+            <div className="hero-buttons">
+              <Link to="/programmes" className="primary-btn">Our Programmes</Link>
+              <Link to="/donation" className="primary-btn">Support Us</Link>
+            </div>
           </div>
         </div>
       </section>
-
-      {/* Other sections can be added here */}
     </div>
   );
 };
