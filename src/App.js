@@ -155,11 +155,11 @@ function App() {
                 <h3>About Us</h3>
                 <p>Swachh Bharat Mission is a national campaign by the Government of India to clean the streets, roads and infrastructure of the country.</p>
                 <div className="footer-social">
-                  <a href="#"><FaFacebookF /></a>
-                  <a href="#"><FaTwitter /></a>
-                  <a href="#"><FaInstagram /></a>
-                  <a href="#"><FaYoutube /></a>
-                </div>
+                <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer"><FaFacebookF /></a>
+                <a href="https://x.com/?lang=en" target="_blank" rel="noopener noreferrer"><FaTwitter /></a>
+                <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer"><FaInstagram /> </a>
+                <a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer"><FaYoutube /> </a>
+               </div>
               </div>
               
               <div className="footer-column">
