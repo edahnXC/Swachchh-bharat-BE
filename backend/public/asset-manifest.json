@@ -1,0 +1,18 @@
+{
+  "files": {
+    "main.css": "/static/css/main.a39eeeb4.css",
+    "main.js": "/static/js/main.743c6f29.js",
+    "static/media/helpp.jpeg": "/static/media/helpp.c648344d9be8e3468ab3.jpeg",
+    "static/media/help.jpeg": "/static/media/help.530138f15a34a88d1168.jpeg",
+    "static/media/clean.jpeg": "/static/media/clean.32d4c92d234abeebb0c8.jpeg",
+    "static/media/banner-image.jpeg": "/static/media/banner-image.1c3ac8729b905e0b4742.jpeg",
+    "static/media/Green-india.png": "/static/media/Green-india.adb89383b1cbf4fd5bf2.png",
+    "index.html": "/index.html",
+    "main.a39eeeb4.css.map": "/static/css/main.a39eeeb4.css.map",
+    "main.743c6f29.js.map": "/static/js/main.743c6f29.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a39eeeb4.css",
+    "static/js/main.743c6f29.js"
+  ]
+}
