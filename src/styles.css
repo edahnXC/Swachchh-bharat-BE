@@ -94,6 +94,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
+  padding: 10px 0;
 }
 
 .navbar .container {
@@ -102,7 +103,7 @@ body {
   align-items: center;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 15px 20px;
+  padding: 0 20px;
 }
 
 .logo {
@@ -121,6 +122,8 @@ body {
 .nav-links {
   display: flex;
   list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-links li {
@@ -212,6 +215,72 @@ body {
 
 .donate-btn:hover::after {
   opacity: 1;
+}
+
+/* Hamburger Menu Icon */
+.menu-icon {
+  display: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--primary-color);
+  z-index: 1001;
+}
+
+/* Mobile Menu */
+@media (max-width: 768px) {
+  .navbar .container {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px 20px;
+    position: relative;
+  }
+
+  .menu-icon {
+    display: block;
+  }
+
+  .nav-links {
+    display: none;
+  }
+
+  .nav-links.mobile-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 65px; /* adjust according to your navbar height */
+    left: 0;
+    width: 100%;
+    background-color: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+    z-index: 1000;
+    animation: slideDown 0.3s ease-in-out;
+  }
+
+  .nav-links.mobile-menu li {
+    margin: 15px 0;
+  }
+
+  .nav-buttons {
+    margin-top: 15px;
+  }
+
+  .donate-btn {
+    margin-top: 10px;
+  }
+}
+
+/* Optional Animation */
+@keyframes slideDown {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .logged-btn {

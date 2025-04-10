@@ -40,7 +40,7 @@ function App() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isAdmin, setIsAdmin] = useState(false);
-
+  const [menuOpen, setMenuOpen] = useState(false);
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -69,14 +69,17 @@ function App() {
             <Link to="/" className="logo">
               Swachh Bharat
             </Link>
-            
-            <ul className="nav-links">
-              <li><Link to="/">Home</Link></li>
-              <li><Link to="/programmes">Programmes</Link></li>
-              <li><Link to="/volunteer">Volunteer</Link></li>
-              <li><Link to="/pledge">Take a Pledge</Link></li>
-              <li><Link to="/contact">Contact</Link></li>
-            </ul>
+            <div className="menu-icon" onClick={() => setMenuOpen(!menuOpen)}>
+      <i className={menuOpen ? "fas fa-times" : "fas fa-bars"}></i>
+    </div>
+
+    <ul className={menuOpen ? "nav-links mobile-menu" : "nav-links"}>
+      <li><Link to="/" onClick={() => setMenuOpen(false)}>Home</Link></li>
+      <li><Link to="/programmes" onClick={() => setMenuOpen(false)}>Programmes</Link></li>
+      <li><Link to="/volunteer" onClick={() => setMenuOpen(false)}>Volunteer</Link></li>
+      <li><Link to="/pledge" onClick={() => setMenuOpen(false)}>Take a Pledge</Link></li>
+      <li><Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link></li>
+    </ul>
 
             <div className="nav-buttons">
               <Link to="/donation" className="donate-btn">
