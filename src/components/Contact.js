@@ -48,7 +48,6 @@ function Contact() {
           </form>
         </div>
 
-        {/* Contact Info */}
         <div className="contact-info">
           <h2>📍 Our Office</h2>
           <hr />
