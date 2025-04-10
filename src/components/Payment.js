@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../styles.css';
@@ -18,8 +18,8 @@ function Payment() {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [rzpInstance, setRzpInstance] = useState(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const rzpInstanceRef = useRef(null);
 
   // Check for required data on mount
   useEffect(() => {
@@ -36,7 +36,6 @@ function Payment() {
       return;
     }
     
-    // Ensure we have form data either from state or session storage
     if (!formData) {
       const storedFormData = JSON.parse(sessionStorage.getItem('donationFormData'));
       if (!storedFormData) {
@@ -81,13 +80,11 @@ function Payment() {
     const initializePayment = async () => {
       setLoading(true);
       try {
-        // Get Razorpay key
         const { data: { key: razorpayKey } } = await axios.get(
           'http://localhost:5000/api/config/razorpay',
           { timeout: 10000 }
         );
 
-        // Get the complete form data from state or session storage
         const completeFormData = formData || 
           JSON.parse(sessionStorage.getItem('donationFormData'));
 
@@ -97,7 +94,7 @@ function Payment() {
 
         const options = {
           key: razorpayKey,
-          amount: Math.round(amount * 100), // Convert to paise
+          amount: Math.round(amount * 100),
           currency: 'INR',
           name: 'Clean India Initiative',
           description: 'Donation for Clean India',
@@ -125,7 +122,6 @@ function Payment() {
                 throw new Error(verifyResponse.data.message || 'Payment verification failed');
               }
 
-              // Clear the stored form data
               sessionStorage.removeItem('donationFormData');
 
               navigate('/payment-success', {
@@ -165,7 +161,7 @@ function Payment() {
         };
 
         const rzp = new window.Razorpay(options);
-        setRzpInstance(rzp);
+        rzpInstanceRef.current = rzp;
         
         rzp.on('payment.failed', (response) => {
           const errorDescription = response.error ? 
@@ -188,8 +184,8 @@ function Payment() {
     initializePayment();
 
     return () => {
-      if (rzpInstance) {
-        rzpInstance.close();
+      if (rzpInstanceRef.current) {
+        rzpInstanceRef.current.close();
       }
     };
   }, [scriptLoaded, donationId, orderId, amount, email, name, phone, navigate, formData]);

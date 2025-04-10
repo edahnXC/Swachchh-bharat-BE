@@ -49,6 +49,8 @@ const AdminPanel = () => {
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [showCountryModal, setShowCountryModal] = useState(false);
     const [showStateModal, setShowStateModal] = useState(false);
+    const [showVolunteerModal, setShowVolunteerModal] = useState(false);
+    const [showProgramModal, setShowProgramModal] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
     const [adminDetails, setAdminDetails] = useState({
         username: "",
@@ -60,14 +62,32 @@ const AdminPanel = () => {
     const [countryForm, setCountryForm] = useState({
         name: "",
         code: "",
-        currency: "",
-        currencySymbol: ""
+        currency: "INR",
+        currencySymbol: "₹"
     });
     const [stateForm, setStateForm] = useState({
         name: "",
         code: "",
         country: ""
     });
+    const [volunteerForm, setVolunteerForm] = useState({
+        name: "",
+        email: "",
+        number: "",
+        city: "",
+        country: "",
+        state: "",
+        message: ""
+    });
+    const [programForm, setProgramForm] = useState({
+        title: "",
+        description: "",
+        date: "",
+        image: null,
+        imagePreview: "",
+        existingImage: ""
+    });
+    
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
@@ -77,6 +97,15 @@ const AdminPanel = () => {
     const [reportData, setReportData] = useState(null);
     const [reportYear, setReportYear] = useState(new Date().getFullYear());
     const [reportMonth, setReportMonth] = useState(new Date().getMonth() + 1);
+    const [stats, setStats] = useState({
+        totalDonors: 0,
+        totalVolunteers: 0,
+        totalPrograms: 0,
+        totalPledges: 0,
+        totalContacts: 0,
+        totalCountries: 0,
+        totalStates: 0
+    });
 
     const navItems = [
         { tab: "dashboard", icon: <FaHome />, label: "Dashboard" },
@@ -90,31 +119,34 @@ const AdminPanel = () => {
         { tab: "reports", icon: <FaChartLine />, label: "Reports" }
     ];
 
-    useEffect(() => {
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-            navigate("/admin");
-            return;
+    const fetchAdminStats = async () => {
+        try {
+            const token = localStorage.getItem("adminToken");
+            const response = await axios.get("http://localhost:5000/api/admin/stats", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            
+            if (response.data.success) {
+                setStats(response.data.stats);
+            }
+        } catch (error) {
+            console.error("Error fetching stats:", error);
         }
+    };
 
-        // Set active tab based on current route
-        const path = location.pathname;
-        if (path.includes("volunteers")) setActiveTab("volunteers");
-        else if (path.includes("donors")) setActiveTab("donors");
-        else if (path.includes("contacts")) setActiveTab("contacts");
-        else if (path.includes("programs")) setActiveTab("programs");
-        else if (path.includes("pledges")) setActiveTab("pledges");
-        else if (path.includes("countries")) setActiveTab("countries");
-        else if (path.includes("states")) setActiveTab("states");
-        else if (path.includes("reports")) setActiveTab("reports");
-        else setActiveTab("dashboard");
-
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const headers = { Authorization: `Bearer ${token}` };
-                
-                // Fetch admin profile first
+    const fetchData = useCallback(async (tab) => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem("adminToken");
+            if (!token) {
+                navigate("/admin");
+                return;
+            }
+    
+            const headers = { Authorization: `Bearer ${token}` };
+            
+            // Fetch admin profile first if not already loaded
+            if (!adminDetails.username) {
                 const profileResponse = await axios.get("http://localhost:5000/api/admin/profile", { headers });
                 if (profileResponse.data.success) {
                     setAdminDetails(prev => ({
@@ -123,73 +155,229 @@ const AdminPanel = () => {
                         email: profileResponse.data.admin.email
                     }));
                 }
-
-                // Fetch other data
-                const responses = await Promise.all([
-                    axios.get("http://localhost:5000/api/admin/volunteers", { headers }),
-                    axios.get("http://localhost:5000/api/admin/donors", { headers }),
-                    axios.get("http://localhost:5000/api/admin/contacts", { headers }),
-                    axios.get("http://localhost:5000/api/admin/programs", { headers }),
-                    axios.get("http://localhost:5000/api/admin/pledges", { headers }),
-                    axios.get("http://localhost:5000/api/admin/countries", { headers }),
-                    axios.get("http://localhost:5000/api/admin/states", { headers })
-                ]);
-
-                // Process volunteers data
-                const processVolunteers = (data) => {
-                    return (data || []).map(v => ({
-                        ...v,
-                        country: v.country?.name || v.country || 'N/A',
-                        state: v.state?.name || v.state || 'N/A'
-                    }));
-                };
-
-                // Process pledges data
-                const processPledges = (data) => {
-                    return (data || []).map(p => ({
-                        ...p,
-                        country: p.country?.name || p.country || 'N/A',
-                        pledges: Array.isArray(p.pledges) ? p.pledges : [p.pledges || 'N/A']
-                    }));
-                };
-
-                // Process donors data
-                const processDonors = (data) => {
-                    return (data || []).map(d => ({
-                        ...d,
-                        country: d.country?.name || d.country || 'N/A',
-                        amount: d.amount || 0
-                    }));
-                };
-
-                setVolunteers(processVolunteers(responses[0].data?.data || responses[0].data || []));
-                setDonors(processDonors(responses[1].data?.data || responses[1].data || []));
-                setContacts(responses[2].data?.data || responses[2].data || []);
-                setPrograms(responses[3].data?.data || responses[3].data || []);
-                setPledges(processPledges(responses[4].data?.data || responses[4].data || []));
-                setCountries(responses[5].data?.data || responses[5].data || []);
-                setStates(responses[6].data?.data || responses[6].data || []);
-            } catch (error) {
-                console.error("Error fetching data:", error.response?.data || error.message);
-                if (error.response?.status === 401) {
-                    localStorage.removeItem("adminToken");
-                    navigate("/admin");
-                }
-                setError("Failed to fetch data. Please try again.");
-            } finally {
-                setLoading(false);
             }
-        };
-
-        fetchData();
-    }, [navigate, location]);
-
     
+            // Only fetch data for the current tab and dashboard stats
+            const endpoints = [];
+            
+            if (tab === "volunteers" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/volunteers", { headers }));
+            }
+            if (tab === "donors" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/donors", { headers }));
+            }
+            if (tab === "contacts" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/contacts", { headers }));
+            }
+            if (tab === "programs" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/programs", { headers }));
+            }
+            if (tab === "pledges" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/pledges", { headers }));
+            }
+            if (tab === "countries" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/countries", { headers }));
+            }
+            if (tab === "states" || tab === "dashboard") {
+                endpoints.push(axios.get("http://localhost:5000/api/admin/states", { headers }));
+            }
+    
+            if (endpoints.length === 0) {
+                setLoading(false);
+                return;
+            }
+    
+            const responses = await Promise.all(endpoints);
+            let responseIndex = 0;
+    
+            // Process and set data based on endpoints
+            if (tab === "volunteers" || tab === "dashboard") {
+                const volunteersData = responses[responseIndex++]?.data?.data || [];
+                setVolunteers(volunteersData.map(v => ({
+                    ...v,
+                    country: v.country?.name || v.country || 'N/A',
+                    state: v.state?.name || v.state || 'N/A'
+                })));
+            }
+            if (tab === "donors" || tab === "dashboard") {
+                const donorsData = responses[responseIndex++]?.data?.data || [];
+                setDonors(donorsData.map(d => ({
+                    ...d,
+                    country: d.country?.name || d.country || 'N/A',
+                    amount: d.amount || 0
+                })));
+            }
+            if (tab === "contacts" || tab === "dashboard") {
+                setContacts(responses[responseIndex++]?.data?.data || []);
+            }
+            if (tab === "programs" || tab === "dashboard") {
+                const programsData = responses[responseIndex++]?.data?.data || [];
+                setPrograms(programsData.map(p => ({
+                    ...p,
+                    title: p.title || 'Untitled Program',
+                    description: p.description || 'No description',
+                    date: p.date || null,
+                    image: p.image || null
+                })));
+            }
+            if (tab === "pledges" || tab === "dashboard") {
+                const pledgesData = responses[responseIndex++]?.data?.data || [];
+                setPledges(pledgesData.map(p => ({
+                    ...p,
+                    country: p.country?.name || p.country || 'N/A',
+                    pledges: Array.isArray(p.pledges) ? p.pledges : [p.pledges || 'N/A']
+                })));
+            }
+            if (tab === "countries" || tab === "dashboard") {
+                setCountries(responses[responseIndex++]?.data?.data || []);
+            }
+            if (tab === "states" || tab === "dashboard") {
+                setStates(responses[responseIndex++]?.data?.data || []);
+            }
+    
+            // Always fetch stats when dashboard is loaded
+            if (tab === "dashboard") {
+                await fetchAdminStats();
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error.response?.data || error.message);
+            if (error.response?.status === 401) {
+                localStorage.removeItem("adminToken");
+                navigate("/admin");
+            }
+            setError("Failed to fetch data. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    }, [navigate, adminDetails.username]);
+
+    const handleProgramImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            if (!validTypes.includes(file.type)) {
+                setError("Only JPG, PNG, or GIF images are allowed");
+                return;
+            }
+    
+            // Validate file size (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                setError("Image size must be less than 5MB");
+                return;
+            }
+    
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProgramForm({
+                    ...programForm,
+                    image: file,
+                    imagePreview: reader.result
+                });
+                setError("");
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+
+    const handleEditProgram = (program) => {
+        setProgramForm({
+            _id: program._id,
+            title: program.title || "",
+            description: program.description || "",
+            date: program.date ? new Date(program.date).toISOString().split('T')[0] : "",
+            image: null,
+            imagePreview: program.image || "", // Use the full image URL here
+            existingImage: program.image || ""
+        });
+        setShowProgramModal(true);
+    };
+
+const handleProgramSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    
+    if (!programForm.title || !programForm.description) {
+        setError("Title and description are required");
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+            setError("Authentication token not found");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', programForm.title);
+        formData.append('description', programForm.description);
+        if (programForm.date) {
+            formData.append('date', programForm.date);
+        }
+        if (programForm.image) {
+            formData.append('image', programForm.image);
+        }
+
+        const endpoint = programForm._id 
+            ? `http://localhost:5000/api/admin/programs/${programForm._id}`
+            : "http://localhost:5000/api/admin/programs";
+        
+        const method = programForm._id ? "put" : "post";
+        
+        const response = await axios[method](endpoint, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        
+        if (response.data.success) {
+            const updatedProgram = {
+                ...response.data.program,
+                title: response.data.program.title || 'Untitled Program',
+                description: response.data.program.description || 'No description'
+            };
+
+            if (programForm._id) {
+                setPrograms(prev => prev.map(p => 
+                    p._id === programForm._id ? updatedProgram : p
+                ));
+                setSuccess("Program updated successfully!");
+            } else {
+                setPrograms(prev => [...prev, updatedProgram]);
+                setSuccess("Program added successfully!");
+            }
+            
+            setTimeout(() => setSuccess(""), 3000);
+            setShowProgramModal(false);
+            setProgramForm({
+                title: "",
+                description: "",
+                date: "",
+                image: null,
+                imagePreview: "",
+                existingImage: ""
+            });
+        } else {
+            setError(response.data.message || "Failed to save program");
+        }
+    } catch (error) {
+        console.error("Error saving program:", error);
+        const errorMessage = error.response?.data?.message || 
+                            error.message || 
+                            "Failed to save program. Please try again.";
+        setError(errorMessage);
+        setTimeout(() => setError(""), 3000);
+    }
+};
 
     const generateReportData = useCallback(async () => {
         const token = localStorage.getItem("adminToken");
         if (!token) return;
-    
+
         try {
             setLoading(true);
             const headers = { Authorization: `Bearer ${token}` };
@@ -197,9 +385,21 @@ const AdminPanel = () => {
                 `http://localhost:5000/api/admin/reports?type=${reportType}&year=${reportYear}&month=${reportMonth}`,
                 { headers }
             );
-    
+
             if (response.data.success) {
-                setReportData(response.data.data);
+                const data = response.data.data;
+                
+                const processedData = {
+                    ...data,
+                    dailyVolunteers: data.dailyVolunteers || [],
+                    dailyDonations: data.dailyDonations || [],
+                    dailyPledges: data.dailyPledges || [],
+                    monthlyVolunteers: data.monthlyVolunteers || [],
+                    monthlyDonations: data.monthlyDonations || [],
+                    monthlyPledges: data.monthlyPledges || []
+                };
+                
+                setReportData(processedData);
             } else {
                 setError(response.data.message || "Failed to generate report");
             }
@@ -210,15 +410,37 @@ const AdminPanel = () => {
             setLoading(false);
         }
     }, [reportType, reportYear, reportMonth]);
-    
+
     useEffect(() => {
-        if (activeTab === "reports") {
+        const path = location.pathname;
+        let tab = "dashboard";
+        
+        if (path.includes("volunteers")) tab = "volunteers";
+        else if (path.includes("donors")) tab = "donors";
+        else if (path.includes("contacts")) tab = "contacts";
+        else if (path.includes("programs")) tab = "programs";
+        else if (path.includes("pledges")) tab = "pledges";
+        else if (path.includes("countries")) tab = "countries";
+        else if (path.includes("states")) tab = "states";
+        else if (path.includes("reports")) tab = "reports";
+        
+        setActiveTab(tab);
+        
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+            navigate("/admin");
+            return;
+        }
+    
+        fetchData(tab);
+    
+        if (tab === "reports") {
             generateReportData();
         }
-    }, [activeTab, generateReportData]);
+    }, [location.pathname, navigate, generateReportData, fetchData]);
 
     const filterData = (data) => {
-        if (!searchTerm) return data;
+        if (!searchTerm || !Array.isArray(data)) return data;
         return data.filter(item => 
             Object.values(item).some(
                 val => val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -251,23 +473,22 @@ const AdminPanel = () => {
     const handleAddNew = () => {
         switch(activeTab) {
             case "programs":
-                navigate("/admin/add-program");
-                break;
-            case "contacts":
-                navigate("/contact");
-                break;
-            case "pledges":
-                navigate("/pledge");
-                break;
-            case "volunteers":
-                navigate("/volunteer-form");
+                setProgramForm({
+                    title: "",
+                    description: "",
+                    date: "",
+                    image: null,
+                    imagePreview: "",
+                    existingImage: ""
+                });
+                setShowProgramModal(true);
                 break;
             case "countries":
                 setCountryForm({
                     name: "",
                     code: "",
-                    currency: "",
-                    currencySymbol: ""
+                    currency: "INR",
+                    currencySymbol: "₹"
                 });
                 setShowCountryModal(true);
                 break;
@@ -279,6 +500,18 @@ const AdminPanel = () => {
                 });
                 setShowStateModal(true);
                 break;
+            case "volunteers":
+                setVolunteerForm({
+                    name: "",
+                    email: "",
+                    number: "",
+                    city: "",
+                    country: "",
+                    state: "",
+                    message: ""
+                });
+                setShowVolunteerModal(true);
+                break;
             default:
                 break;
         }
@@ -286,10 +519,10 @@ const AdminPanel = () => {
 
     const handleEditCountry = (country) => {
         setCountryForm({
-            name: country.name,
-            code: country.code,
-            currency: country.currency,
-            currencySymbol: country.currencySymbol,
+            name: country.name || "",
+            code: country.code || "",
+            currency: country.currency || "INR",
+            currencySymbol: country.currencySymbol || "₹",
             _id: country._id
         });
         setShowCountryModal(true);
@@ -297,12 +530,26 @@ const AdminPanel = () => {
 
     const handleEditState = (state) => {
         setStateForm({
-            name: state.name,
-            code: state.code,
-            country: state.country._id || state.country,
+            name: state.name || "",
+            code: state.code || "",
+            country: state.country?._id || state.country || "",
             _id: state._id
         });
         setShowStateModal(true);
+    };
+
+    const handleEditVolunteer = (volunteer) => {
+        setVolunteerForm({
+            _id: volunteer._id,
+            name: volunteer.name || "",
+            email: volunteer.email || "",
+            number: volunteer.number || "",
+            city: volunteer.city || "",
+            country: volunteer.country?._id || volunteer.country || "",
+            state: volunteer.state?._id || volunteer.state || "",
+            message: volunteer.message || ""
+        });
+        setShowVolunteerModal(true);
     };
 
     const handleDelete = async (id, type) => {
@@ -311,9 +558,7 @@ const AdminPanel = () => {
         try {
             const token = localStorage.getItem("adminToken");
             let endpoint = '';
-            if (type === "pledges") {
-                endpoint = `http://localhost:5000/api/pledges/${id}`;
-            } else if (type === "countries") {
+            if (type === "countries") {
                 endpoint = `http://localhost:5000/api/admin/countries/${id}`;
             } else if (type === "states") {
                 endpoint = `http://localhost:5000/api/admin/states/${id}`;
@@ -337,6 +582,11 @@ const AdminPanel = () => {
             
             updateState[type](prev => prev.filter(item => item._id !== id));
             
+            // Update stats if we're on dashboard
+            if (activeTab === "dashboard") {
+                fetchAdminStats();
+            }
+            
             setSuccess(`${type.slice(0, -1).charAt(0).toUpperCase() + type.slice(0, -1).slice(1)} deleted successfully!`);
             setTimeout(() => setSuccess(""), 3000);
         } catch (error) {
@@ -347,7 +597,10 @@ const AdminPanel = () => {
     };
 
     const viewDetails = (item, type) => {
-        setSelectedItem({ ...item, type });
+        setSelectedItem({ 
+            ...item, 
+            type
+        });
     };
 
     const handleAdminUpdate = async (e) => {
@@ -396,9 +649,8 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
-        // Validation
-        if (!countryForm.name || !countryForm.code || !countryForm.currency || !countryForm.currencySymbol) {
-            setError("All fields are required");
+        if (!countryForm.name || !countryForm.code) {
+            setError("Name and code are required");
             return;
         }
         
@@ -423,13 +675,11 @@ const AdminPanel = () => {
             
             if (response.data.success) {
                 if (countryForm._id) {
-                    // Update existing country
                     setCountries(prev => prev.map(c => 
                         c._id === countryForm._id ? response.data.country : c
                     ));
                     setSuccess("Country updated successfully!");
                 } else {
-                    // Add new country
                     setCountries(prev => [...prev, response.data.country]);
                     setSuccess("Country added successfully!");
                 }
@@ -439,8 +689,8 @@ const AdminPanel = () => {
                 setCountryForm({
                     name: "",
                     code: "",
-                    currency: "",
-                    currencySymbol: ""
+                    currency: "INR",
+                    currencySymbol: "₹"
                 });
             }
         } catch (error) {
@@ -455,7 +705,6 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
-        // Validation
         if (!stateForm.name || !stateForm.code || !stateForm.country) {
             setError("All fields are required");
             return;
@@ -482,13 +731,11 @@ const AdminPanel = () => {
             
             if (response.data.success) {
                 if (stateForm._id) {
-                    // Update existing state
                     setStates(prev => prev.map(s => 
                         s._id === stateForm._id ? response.data.state : s
                     ));
                     setSuccess("State updated successfully!");
                 } else {
-                    // Add new state
                     setStates(prev => [...prev, response.data.state]);
                     setSuccess("State added successfully!");
                 }
@@ -508,15 +755,69 @@ const AdminPanel = () => {
         }
     };
 
+    const handleVolunteerSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+        
+        if (!volunteerForm.name || !volunteerForm.email || !volunteerForm.number) {
+            setError("Name, email and phone number are required");
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem("adminToken");
+            const endpoint = volunteerForm._id ? 
+                `http://localhost:5000/api/admin/volunteers/${volunteerForm._id}` : 
+                "http://localhost:5000/api/admin/volunteers";
+                
+            const method = volunteerForm._id ? "put" : "post";
+            
+            const response = await axios[method](
+                endpoint,
+                volunteerForm,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            if (response.data.success) {
+                if (volunteerForm._id) {
+                    setVolunteers(prev => prev.map(v => 
+                        v._id === volunteerForm._id ? response.data.volunteer : v
+                    ));
+                    setSuccess("Volunteer updated successfully!");
+                } else {
+                    setVolunteers(prev => [...prev, response.data.volunteer]);
+                    setSuccess("Volunteer added successfully!");
+                }
+                
+                setTimeout(() => setSuccess(""), 3000);
+                setShowVolunteerModal(false);
+                setVolunteerForm({
+                    name: "",
+                    email: "",
+                    number: "",
+                    city: "",
+                    country: "",
+                    state: "",
+                    message: ""
+                });
+            }
+        } catch (error) {
+            console.error("Error saving volunteer:", error.response?.data || error.message);
+            setError(error.response?.data?.message || "Failed to save volunteer. Please try again.");
+            setTimeout(() => setError(""), 3000);
+        }
+    };
+
     const getCountForTab = (tab) => {
         switch(tab) {
-            case 'volunteers': return volunteers.length;
-            case 'donors': return donors.length;
-            case 'contacts': return contacts.length;
-            case 'programs': return programs.length;
-            case 'pledges': return pledges.length;
-            case 'countries': return countries.length;
-            case 'states': return states.length;
+            case 'volunteers': return stats.totalVolunteers;
+            case 'donors': return stats.totalDonors;
+            case 'contacts': return stats.totalContacts;
+            case 'programs': return stats.totalPrograms;
+            case 'pledges': return stats.totalPledges;
+            case 'countries': return stats.totalCountries;
+            case 'states': return stats.totalStates;
             default: return 0;
         }
     };
@@ -540,6 +841,8 @@ const AdminPanel = () => {
         for (let i = 1; i <= Math.ceil(filteredItems.length / itemsPerPage); i++) {
             pageNumbers.push(i);
         }
+
+        if (pageNumbers.length <= 1) return null;
 
         return (
             <Pagination className="mt-3 justify-content-center">
@@ -566,12 +869,12 @@ const AdminPanel = () => {
 
     const renderReportCharts = () => {
         if (!reportData) return null;
-
+    
         const months = [
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
-
+    
         // Volunteers Chart
         const volunteersData = {
             labels: reportType === 'monthly' ? 
@@ -580,14 +883,15 @@ const AdminPanel = () => {
             datasets: [{
                 label: 'Volunteers',
                 data: reportType === 'monthly' ? 
-                    reportData.dailyVolunteers : 
-                    reportData.monthlyVolunteers,
+                    (reportData.dailyVolunteers || Array(new Date(reportYear, reportMonth, 0).getDate()).fill(0)) : 
+                    (reportData.monthlyVolunteers || Array(12).fill(0)),
                 backgroundColor: 'rgba(54, 162, 235, 0.5)',
                 borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                tension: 0.1
             }]
         };
-
+    
         // Donations Chart
         const donationsData = {
             labels: reportType === 'monthly' ? 
@@ -596,14 +900,15 @@ const AdminPanel = () => {
             datasets: [{
                 label: 'Donations (₹)',
                 data: reportType === 'monthly' ? 
-                    reportData.dailyDonations : 
-                    reportData.monthlyDonations,
+                    (reportData.dailyDonations || Array(new Date(reportYear, reportMonth, 0).getDate()).fill(0)) : 
+                    (reportData.monthlyDonations || Array(12).fill(0)),
                 backgroundColor: 'rgba(75, 192, 192, 0.5)',
                 borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                tension: 0.1
             }]
         };
-
+    
         // Pledges Chart
         const pledgesData = {
             labels: reportType === 'monthly' ? 
@@ -612,31 +917,32 @@ const AdminPanel = () => {
             datasets: [{
                 label: 'Pledges',
                 data: reportType === 'monthly' ? 
-                    reportData.dailyPledges : 
-                    reportData.monthlyPledges,
+                    (reportData.dailyPledges || Array(new Date(reportYear, reportMonth, 0).getDate()).fill(0)) : 
+                    (reportData.monthlyPledges || Array(12).fill(0)),
                 backgroundColor: 'rgba(255, 99, 132, 0.5)',
                 borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1
+                borderWidth: 1,
+                tension: 0.1
             }]
         };
-
+    
         // Summary Pie Chart
         const summaryData = {
             labels: ['Volunteers', 'Donations (₹)', 'Pledges', 'Messages', 'Programs'],
             datasets: [{
                 data: [
-                    reportData.totalVolunteers,
-                    reportData.totalDonations,
-                    reportData.totalPledges,
-                    reportData.totalMessages,
-                    reportData.totalPrograms
+                    reportData.totalVolunteers || 0,
+                    reportData.totalDonations || 0,
+                    reportData.totalPledges || 0,
+                    reportData.totalMessages || 0,
+                    reportData.totalPrograms || 0
                 ],
                 backgroundColor: [
-                    'rgba(54, 162, 235, 0.5)',
-                    'rgba(75, 192, 192, 0.5)',
-                    'rgba(255, 99, 132, 0.5)',
-                    'rgba(153, 102, 255, 0.5)',
-                    'rgba(255, 159, 64, 0.5)'
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(153, 102, 255, 0.7)',
+                    'rgba(255, 159, 64, 0.7)'
                 ],
                 borderColor: [
                     'rgba(54, 162, 235, 1)',
@@ -648,7 +954,51 @@ const AdminPanel = () => {
                 borderWidth: 1
             }]
         };
-
+    
+        // Common chart options
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                if (context.dataset.label.includes('Donations')) {
+                                    label += `₹${context.parsed.y.toLocaleString('en-IN')}`;
+                                } else {
+                                    label += context.parsed.y;
+                                }
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: reportType === 'monthly' ? 'Count' : 'Amount (₹)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: reportType === 'monthly' ? 'Day' : 'Month'
+                    }
+                }
+            }
+        };
+    
         return (
             <div className="report-charts">
                 <Row>
@@ -662,8 +1012,7 @@ const AdminPanel = () => {
                                     <Pie 
                                         data={summaryData}
                                         options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
+                                            ...commonOptions,
                                             plugins: {
                                                 legend: {
                                                     position: 'right'
@@ -687,20 +1036,14 @@ const AdminPanel = () => {
                                     <Bar 
                                         data={volunteersData}
                                         options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
+                                            ...commonOptions,
                                             scales: {
+                                                ...commonOptions.scales,
                                                 y: {
-                                                    beginAtZero: true,
+                                                    ...commonOptions.scales.y,
                                                     title: {
-                                                        display: true,
+                                                        ...commonOptions.scales.y.title,
                                                         text: 'Count'
-                                                    }
-                                                },
-                                                x: {
-                                                    title: {
-                                                        display: true,
-                                                        text: reportType === 'monthly' ? 'Day' : 'Month'
                                                     }
                                                 }
                                             }
@@ -720,20 +1063,14 @@ const AdminPanel = () => {
                                     <Line 
                                         data={donationsData}
                                         options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
+                                            ...commonOptions,
                                             scales: {
+                                                ...commonOptions.scales,
                                                 y: {
-                                                    beginAtZero: true,
+                                                    ...commonOptions.scales.y,
                                                     title: {
-                                                        display: true,
+                                                        ...commonOptions.scales.y.title,
                                                         text: 'Amount (₹)'
-                                                    }
-                                                },
-                                                x: {
-                                                    title: {
-                                                        display: true,
-                                                        text: reportType === 'monthly' ? 'Day' : 'Month'
                                                     }
                                                 }
                                             }
@@ -753,26 +1090,73 @@ const AdminPanel = () => {
                                     <Bar 
                                         data={pledgesData}
                                         options={{
-                                            responsive: true,
-                                            maintainAspectRatio: false,
+                                            ...commonOptions,
                                             scales: {
+                                                ...commonOptions.scales,
                                                 y: {
-                                                    beginAtZero: true,
+                                                    ...commonOptions.scales.y,
                                                     title: {
-                                                        display: true,
+                                                        ...commonOptions.scales.y.title,
                                                         text: 'Count'
-                                                    }
-                                                },
-                                                x: {
-                                                    title: {
-                                                        display: true,
-                                                        text: reportType === 'monthly' ? 'Day' : 'Month'
                                                     }
                                                 }
                                             }
                                         }}
                                     />
                                 </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+                <Row>
+                    <Col md={12}>
+                        <Card>
+                            <Card.Header>
+                                <h5>Total Statistics</h5>
+                            </Card.Header>
+                            <Card.Body>
+                                <Row>
+                                    <Col md={2} className="text-center">
+                                        <Card className="mb-3">
+                                            <Card.Body>
+                                                <h3>{reportData.totalVolunteers || 0}</h3>
+                                                <p>Volunteers</p>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                    <Col md={2} className="text-center">
+                                        <Card className="mb-3">
+                                            <Card.Body>
+                                                <h3>₹{(reportData.totalDonations || 0).toLocaleString('en-IN')}</h3>
+                                                <p>Donations</p>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                    <Col md={2} className="text-center">
+                                        <Card className="mb-3">
+                                            <Card.Body>
+                                                <h3>{reportData.totalPledges || 0}</h3>
+                                                <p>Pledges</p>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                    <Col md={2} className="text-center">
+                                        <Card className="mb-3">
+                                            <Card.Body>
+                                                <h3>{reportData.totalMessages || 0}</h3>
+                                                <p>Messages</p>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                    <Col md={2} className="text-center">
+                                        <Card className="mb-3">
+                                            <Card.Body>
+                                                <h3>{reportData.totalPrograms || 0}</h3>
+                                                <p>Programs</p>
+                                            </Card.Body>
+                                        </Card>
+                                    </Col>
+                                </Row>
                             </Card.Body>
                         </Card>
                     </Col>
@@ -786,7 +1170,7 @@ const AdminPanel = () => {
             {/* Sidebar */}
             <div className="admin-sidebar">
                 <div className="sidebar-header">
-                    <h3>Swachh Bharat CMS</h3>
+                    <h3>Swachh Bharat </h3>
                     <Button variant="link" onClick={toggleSidebar} className="sidebar-toggle">
                         {sidebarOpen ? <FaTimes /> : <FaBars />}
                     </Button>
@@ -898,166 +1282,16 @@ const AdminPanel = () => {
                             )}
 
                             {/* Volunteers List */}
-         {activeTab === "volunteers" && (
-        <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5>Volunteers</h5>
-                <div className="d-flex">
-                    <div className="search-box me-2">
-                        <FaSearch className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Search volunteers..."
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                    </div>
-                    <Button variant="success" size="sm" onClick={handleAddNew}>
-                        <FaPlus /> Add New
-                    </Button>
-                </div>
-            </Card.Header>
-            <Card.Body>
-                {filterData(volunteers).length === 0 ? (
-                    <Alert variant="info">No volunteers found</Alert>
-                ) : (
-                    <>
-                        <Table striped hover responsive>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Country</th>
-                                    <th>State</th>
-                                    <th>City</th>
-                                    <th>Contact</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentVolunteers.map((volunteer, index) => (
-                                    <tr key={volunteer._id}>
-                                        <td>{indexOfFirstItem + index + 1}</td>
-                                        <td>{volunteer.name || 'N/A'}</td>
-                                        <td>{volunteer.email || 'N/A'}</td>
-                                        <td>{renderCountry(volunteer.country)}</td>
-                                        <td>{volunteer.state || 'N/A'}</td>
-                                        <td>{volunteer.city || 'N/A'}</td>
-                                        <td>{volunteer.number || 'N/A'}</td>
-                                        <td>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm"
-                                                className="me-2"
-                                                onClick={() => viewDetails(volunteer, "volunteer")}
-                                            >
-                                                <FaEye />
-                                            </Button>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDelete(volunteer._id, "volunteers")}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                        {renderPagination(volunteers)}
-                    </>
-                )}
-            </Card.Body>
-        </Card>
-    )}
-
-                            {/* Donors List */}
-                            {activeTab === "donors" && (
-        <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5>Donors</h5>
-                <div className="search-box">
-                    <FaSearch className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search donors..."
-                        value={searchTerm}
-                        onChange={(e) => {
-                            setSearchTerm(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                    />
-                </div>
-            </Card.Header>
-            <Card.Body>
-                {filterData(donors).length === 0 ? (
-                    <Alert variant="info">No donors found</Alert>
-                ) : (
-                    <>
-                        <Table striped hover responsive>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Amount</th>
-                                    <th>Country</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentDonors.map((donor, index) => (
-                                    <tr key={donor._id}>
-                                        <td>{indexOfFirstItem + index + 1}</td>
-                                        <td>{donor.name || 'N/A'}</td>
-                                        <td>{donor.email || 'N/A'}</td>
-                                        <td>{renderAmount(donor.amount)}</td>
-                                        <td>{renderCountry(donor.country)}</td>
-                                        <td>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm"
-                                                className="me-2"
-                                                onClick={() => viewDetails(donor, "donor")}
-                                            >
-                                                <FaEye />
-                                            </Button>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDelete(donor._id, "donors")}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                        {renderPagination(donors)}
-                    </>
-                )}
-            </Card.Body>
-        </Card>
-    )}
-
-
-                            {/* Contacts List */}
-                            {activeTab === "contacts" && (
+                            {activeTab === "volunteers" && (
                                 <Card>
                                     <Card.Header className="d-flex justify-content-between align-items-center">
-                                        <h5>Messages</h5>
+                                        <h5>Volunteers</h5>
                                         <div className="d-flex">
                                             <div className="search-box me-2">
                                                 <FaSearch className="search-icon" />
                                                 <input
                                                     type="text"
-                                                    placeholder="Search messages..."
+                                                    placeholder="Search volunteers..."
                                                     value={searchTerm}
                                                     onChange={(e) => {
                                                         setSearchTerm(e.target.value);
@@ -1068,6 +1302,159 @@ const AdminPanel = () => {
                                             <Button variant="success" size="sm" onClick={handleAddNew}>
                                                 <FaPlus /> Add New
                                             </Button>
+                                        </div>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        {filterData(volunteers).length === 0 ? (
+                                            <Alert variant="info">No volunteers found</Alert>
+                                        ) : (
+                                            <>
+                                                <Table striped hover responsive>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Name</th>
+                                                            <th>Email</th>
+                                                            <th>Country</th>
+                                                            <th>State</th>
+                                                            <th>City</th>
+                                                            <th>Contact</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {currentVolunteers.map((volunteer, index) => (
+                                                            <tr key={volunteer._id}>
+                                                                <td>{indexOfFirstItem + index + 1}</td>
+                                                                <td>{volunteer.name || 'N/A'}</td>
+                                                                <td>{volunteer.email || 'N/A'}</td>
+                                                                <td>{renderCountry(volunteer.country)}</td>
+                                                                <td>{volunteer.state || 'N/A'}</td>
+                                                                <td>{volunteer.city || 'N/A'}</td>
+                                                                <td>{volunteer.number || 'N/A'}</td>
+                                                                <td>
+                                                                    <Button 
+                                                                        variant="info" 
+                                                                        size="sm"
+                                                                        className="me-2"
+                                                                        onClick={() => viewDetails(volunteer, "volunteer")}
+                                                                    >
+                                                                        <FaEye />
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="warning" 
+                                                                        size="sm"
+                                                                        className="me-2"
+                                                                        onClick={() => handleEditVolunteer(volunteer)}
+                                                                    >
+                                                                        <FaEdit />
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="danger" 
+                                                                        size="sm"
+                                                                        onClick={() => handleDelete(volunteer._id, "volunteers")}
+                                                                    >
+                                                                        <FaTrash />
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
+                                                {renderPagination(volunteers)}
+                                            </>
+                                        )}
+                                    </Card.Body>
+                                </Card>
+                            )}
+
+                            {/* Donors List */}
+                            {activeTab === "donors" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Donors</h5>
+                                        <div className="search-box">
+                                            <FaSearch className="search-icon" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search donors..."
+                                                value={searchTerm}
+                                                onChange={(e) => {
+                                                    setSearchTerm(e.target.value);
+                                                    setCurrentPage(1);
+                                                }}
+                                            />
+                                        </div>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        {filterData(donors).length === 0 ? (
+                                            <Alert variant="info">No donors found</Alert>
+                                        ) : (
+                                            <>
+                                                <Table striped hover responsive>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Name</th>
+                                                            <th>Email</th>
+                                                            <th>Amount</th>
+                                                            <th>Country</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {currentDonors.map((donor, index) => (
+                                                            <tr key={donor._id}>
+                                                                <td>{indexOfFirstItem + index + 1}</td>
+                                                                <td>{donor.name || 'N/A'}</td>
+                                                                <td>{donor.email || 'N/A'}</td>
+                                                                <td>{renderAmount(donor.amount)}</td>
+                                                                <td>{renderCountry(donor.country)}</td>
+                                                                <td>
+                                                                    <Button 
+                                                                        variant="info" 
+                                                                        size="sm"
+                                                                        className="me-2"
+                                                                        onClick={() => viewDetails(donor, "donor")}
+                                                                    >
+                                                                        <FaEye />
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="danger" 
+                                                                        size="sm"
+                                                                        onClick={() => handleDelete(donor._id, "donors")}
+                                                                    >
+                                                                        <FaTrash />
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
+                                                {renderPagination(donors)}
+                                            </>
+                                        )}
+                                    </Card.Body>
+                                </Card>
+                            )}
+
+                            {/* Contacts List */}
+{/* Contacts List */}
+                            {activeTab === "contacts" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Messages</h5>
+                                        <div className="search-box">
+                                            <FaSearch className="search-icon" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search messages..."
+                                                value={searchTerm}
+                                                onChange={(e) => {
+                                                    setSearchTerm(e.target.value);
+                                                    setCurrentPage(1);
+                                                }}
+                                            />
                                         </div>
                                     </Card.Header>
                                     <Card.Body>
@@ -1157,7 +1544,7 @@ const AdminPanel = () => {
                                                             <th>Title</th>
                                                             <th>Description</th>
                                                             <th>Image</th>
-                                                            <th>Location</th>
+                                                            <th>Date</th>
                                                             <th>Actions</th>
                                                         </tr>
                                                     </thead>
@@ -1165,17 +1552,25 @@ const AdminPanel = () => {
                                                         {currentPrograms.map((program, index) => (
                                                             <tr key={program._id}>
                                                                 <td>{indexOfFirstItem + index + 1}</td>
-                                                                <td>{program.title}</td>
+                                                                <td>{program.title || 'Untitled Program'}</td>
                                                                 <td>{program.description.substring(0, 50)}...</td>
                                                                 <td>
+                                                                {program.image ? (
                                                                     <img 
-                                                                        src={program.imageUrl} 
-                                                                        alt={program.title} 
+                                                                        src={program.image}  // Use the full URL from backend
+                                                                        alt={program.title || 'Program'} 
                                                                         width="50" 
                                                                         className="img-thumbnail"
+                                                                        onError={(e) => {
+                                                                            e.target.onerror = null;
+                                                                            e.target.src = '/placeholder.jpg';
+                                                                        }}
                                                                     />
+                                                                ) : (
+                                                                    <span className="text-muted">No image</span>
+                                                                )}
                                                                 </td>
-                                                                <td>{program.location || 'N/A'}</td>
+                                                                <td>{program.date ? new Date(program.date).toLocaleDateString() : 'N/A'}</td>
                                                                 <td>
                                                                     <Button 
                                                                         variant="info" 
@@ -1184,6 +1579,14 @@ const AdminPanel = () => {
                                                                         onClick={() => viewDetails(program, "program")}
                                                                     >
                                                                         <FaEye />
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="warning" 
+                                                                        size="sm"
+                                                                        className="me-2"
+                                                                        onClick={() => handleEditProgram(program)}
+                                                                    >
+                                                                        <FaEdit />
                                                                     </Button>
                                                                     <Button 
                                                                         variant="danger" 
@@ -1205,87 +1608,87 @@ const AdminPanel = () => {
                             )}
 
                             {/* Pledges List */}
-        {activeTab === "pledges" && (
-        <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-                <h5>Pledges</h5>
-                <div className="d-flex">
-                    <div className="search-box me-2">
-                        <FaSearch className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Search pledges..."
-                            value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                setCurrentPage(1);
-                            }}
-                        />
-                    </div>
-                    <Button variant="success" size="sm" onClick={handleAddNew}>
-                        <FaPlus /> Add New
-                    </Button>
-                </div>
-            </Card.Header>
-            <Card.Body>
-                {filterData(pledges).length === 0 ? (
-                    <Alert variant="info">No pledges found</Alert>
-                ) : (
-                    <>
-                        <Table striped hover responsive>
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Country</th>
-                                    <th>City</th>
-                                    <th>Pledges</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentPledges.map((pledge, index) => (
-                                    <tr key={pledge._id}>
-                                        <td>{indexOfFirstItem + index + 1}</td>
-                                        <td>{pledge.name || 'N/A'}</td>
-                                        <td>{pledge.email || 'N/A'}</td>
-                                        <td>{renderCountry(pledge.country)}</td>
-                                        <td>{pledge.city || 'N/A'}</td>
-                                        <td>
-                                            <ul className="list-unstyled">
-                                                {pledge.pledges.slice(0, 2).map((p, i) => (
-                                                    <li key={i}>• {p || 'N/A'}</li>
-                                                ))}
-                                            </ul>
-                                        </td>
-                                        <td>
-                                            <Button 
-                                                variant="info" 
-                                                size="sm"
-                                                className="me-2"
-                                                onClick={() => viewDetails(pledge, "pledge")}
-                                            >
-                                                <FaEye />
+                            {activeTab === "pledges" && (
+                                <Card>
+                                    <Card.Header className="d-flex justify-content-between align-items-center">
+                                        <h5>Pledges</h5>
+                                        <div className="d-flex">
+                                            <div className="search-box me-2">
+                                                <FaSearch className="search-icon" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Search pledges..."
+                                                    value={searchTerm}
+                                                    onChange={(e) => {
+                                                        setSearchTerm(e.target.value);
+                                                        setCurrentPage(1);
+                                                    }}
+                                                />
+                                            </div>
+                                            <Button variant="success" size="sm" onClick={handleAddNew}>
+                                                <FaPlus /> Add New
                                             </Button>
-                                            <Button 
-                                                variant="danger" 
-                                                size="sm"
-                                                onClick={() => handleDelete(pledge._id, "pledges")}
-                                            >
-                                                <FaTrash />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                        {renderPagination(pledges)}
-                    </>
-                )}
-            </Card.Body>
-        </Card>
-    )}
+                                        </div>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        {filterData(pledges).length === 0 ? (
+                                            <Alert variant="info">No pledges found</Alert>
+                                        ) : (
+                                            <>
+                                                <Table striped hover responsive>
+                                                    <thead>
+                                                        <tr>
+                                                            <th>#</th>
+                                                            <th>Name</th>
+                                                            <th>Email</th>
+                                                            <th>Country</th>
+                                                            <th>City</th>
+                                                            <th>Pledges</th>
+                                                            <th>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {currentPledges.map((pledge, index) => (
+                                                            <tr key={pledge._id}>
+                                                                <td>{indexOfFirstItem + index + 1}</td>
+                                                                <td>{pledge.name || 'N/A'}</td>
+                                                                <td>{pledge.email || 'N/A'}</td>
+                                                                <td>{renderCountry(pledge.country)}</td>
+                                                                <td>{pledge.city || 'N/A'}</td>
+                                                                <td>
+                                                                    <ul className="list-unstyled">
+                                                                        {pledge.pledges.slice(0, 2).map((p, i) => (
+                                                                            <li key={i}>• {p || 'N/A'}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </td>
+                                                                <td>
+                                                                    <Button 
+                                                                        variant="info" 
+                                                                        size="sm"
+                                                                        className="me-2"
+                                                                        onClick={() => viewDetails(pledge, "pledge")}
+                                                                    >
+                                                                        <FaEye />
+                                                                    </Button>
+                                                                    <Button 
+                                                                        variant="danger" 
+                                                                        size="sm"
+                                                                        onClick={() => handleDelete(pledge._id, "pledges")}
+                                                                    >
+                                                                        <FaTrash />
+                                                                    </Button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </Table>
+                                                {renderPagination(pledges)}
+                                            </>
+                                        )}
+                                    </Card.Body>
+                                </Card>
+                            )}
 
                             {/* Countries List */}
                             {activeTab === "countries" && (
@@ -1528,7 +1931,7 @@ const AdminPanel = () => {
                                                     <Col md={3}>
                                                         <Card className="text-center">
                                                             <Card.Body>
-                                                                <h3>₹{reportData.totalDonations}</h3>
+                                                                <h3>₹{reportData.totalDonations.toLocaleString('en-IN')}</h3>
                                                                 <p>Total Donations</p>
                                                             </Card.Body>
                                                         </Card>
@@ -1627,9 +2030,6 @@ const AdminPanel = () => {
                         </div>
                     </Form>
                 </Modal.Body>
-                <Modal.Footer className="justify-content-center">
-                    <small className="text-muted">Copyright © {new Date().getFullYear()} SwachhBharat. All rights reserved.</small>
-                </Modal.Footer>
             </Modal>
 
             {/* Country Modal */}
@@ -1638,8 +2038,8 @@ const AdminPanel = () => {
                 setCountryForm({
                     name: "",
                     code: "",
-                    currency: "",
-                    currencySymbol: ""
+                    currency: "INR",
+                    currencySymbol: "₹"
                 });
             }}>
                 <Modal.Header closeButton>
@@ -1702,8 +2102,8 @@ const AdminPanel = () => {
                                 setCountryForm({
                                     name: "",
                                     code: "",
-                                    currency: "",
-                                    currencySymbol: ""
+                                    currency: "INR",
+                                    currencySymbol: "₹"
                                 });
                             }} className="me-2">
                                 Cancel
@@ -1782,6 +2182,232 @@ const AdminPanel = () => {
                             </Button>
                             <Button variant="primary" type="submit">
                                 {stateForm._id ? "Update" : "Save"} State
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Volunteer Modal */}
+             <Modal show={showVolunteerModal} onHide={() => {
+                setShowVolunteerModal(false);
+                setVolunteerForm({
+                    name: "",
+                    email: "",
+                    number: "",
+                    city: "",
+                    country: "",
+                    state: "",
+                    message: ""
+                });
+            }}>
+                <Modal.Header closeButton>
+                    <Modal.Title>{volunteerForm._id ? "Edit" : "Add"} Volunteer</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleVolunteerSubmit}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Name *</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={volunteerForm.name}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, name: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email *</Form.Label>
+                            <Form.Control 
+                                type="email" 
+                                value={volunteerForm.email}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, email: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Phone Number *</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={volunteerForm.number}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, number: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>City</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={volunteerForm.city}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, city: e.target.value})}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Country</Form.Label>
+                            <Form.Select
+                                value={volunteerForm.country}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, country: e.target.value})}
+                            >
+                                <option value="">Select Country</option>
+                                {countries.map(country => (
+                                    <option key={country._id} value={country._id}>
+                                        {country.name}
+                                    </option>
+                                ))}
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>State</Form.Label>
+                            <Form.Select
+                                value={volunteerForm.state}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, state: e.target.value})}
+                                disabled={!volunteerForm.country}
+                            >
+                                <option value="">Select State</option>
+                                {states
+                                    .filter(state => state.country === volunteerForm.country || state.country._id === volunteerForm.country)
+                                    .map(state => (
+                                        <option key={state._id} value={state._id}>
+                                            {state.name}
+                                        </option>
+                                    ))
+                                }
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Message</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={3}
+                                value={volunteerForm.message}
+                                onChange={(e) => setVolunteerForm({...volunteerForm, message: e.target.value})}
+                            />
+                        </Form.Group>
+                        {error && <Alert variant="danger">{error}</Alert>}
+                        {success && <Alert variant="success">{success}</Alert>}
+                        <div className="d-flex justify-content-end">
+                            <Button variant="secondary" onClick={() => {
+                                setShowVolunteerModal(false);
+                                setVolunteerForm({
+                                    name: "",
+                                    email: "",
+                                    number: "",
+                                    city: "",
+                                    country: "",
+                                    state: "",
+                                    message: ""
+                                });
+                            }} className="me-2">
+                                Cancel
+                            </Button>
+                            <Button variant="primary" type="submit">
+                                {volunteerForm._id ? "Update" : "Save"} Volunteer
+                            </Button>
+                        </div>
+                    </Form>
+                </Modal.Body>
+            </Modal>
+
+            {/* Program Modal */}
+            <Modal show={showProgramModal} onHide={() => setShowProgramModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>{programForm._id ? "Edit" : "Add"} Program</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Form onSubmit={handleProgramSubmit}>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Title *</Form.Label>
+                            <Form.Control 
+                                type="text" 
+                                value={programForm.title}
+                                onChange={(e) => setProgramForm({...programForm, title: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description *</Form.Label>
+                            <Form.Control 
+                                as="textarea" 
+                                rows={3}
+                                value={programForm.description}
+                                onChange={(e) => setProgramForm({...programForm, description: e.target.value})}
+                                required
+                            />
+                        </Form.Group>
+                        <Row>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Date</Form.Label>
+                                    <Form.Control 
+                                        type="date" 
+                                        value={programForm.date}
+                                        onChange={(e) => setProgramForm({...programForm, date: e.target.value})}
+                                    />
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Form.Group className="mb-3">
+    <Form.Label>Program Image</Form.Label>
+    <div className="d-flex align-items-center mb-3">
+        {programForm.imagePreview ? (
+            <img 
+                src={programForm.imagePreview} 
+                alt="Preview" 
+                className="img-thumbnail me-3"
+                style={{ maxHeight: '150px' }}
+            />
+        ) : programForm.existingImage ? (
+            <img 
+                src={programForm.existingImage} 
+                alt="Current" 
+                className="img-thumbnail me-3"
+                style={{ maxHeight: '150px' }}
+                onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder.jpg';
+                }}
+            />
+        ) : (
+            <div className="text-muted me-3" style={{ width: '150px', height: '150px', border: '1px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                No image selected
+            </div>
+        )}
+    </div>
+    <div className="d-flex">
+        <Form.Control 
+            type="file" 
+            accept="image/*"
+            onChange={handleProgramImageChange}
+            className="me-2"
+        />
+        {programForm.existingImage && (
+            <Button 
+                variant="outline-danger" 
+                onClick={() => {
+                    setProgramForm(prev => ({
+                        ...prev,
+                        image: null,
+                        imagePreview: "",
+                        existingImage: ""
+                    }));
+                    document.getElementById('programImageInput').value = '';
+                }}
+            >
+                Remove
+            </Button>
+        )}
+    </div>
+    <Form.Text className="text-muted">
+        Recommended size: 1200x630 pixels (max 5MB)
+    </Form.Text>
+</Form.Group>
+                        {error && <Alert variant="danger">{error}</Alert>}
+                        {success && <Alert variant="success">{success}</Alert>}
+                        <div className="d-flex justify-content-end">
+                            <Button variant="secondary" onClick={() => setShowProgramModal(false)} className="me-2">
+                                Cancel
+                            </Button>
+                            <Button variant="primary" type="submit">
+                                {programForm._id ? "Update" : "Save"} Program
                             </Button>
                         </div>
                     </Form>
@@ -1892,32 +2518,78 @@ const AdminPanel = () => {
                                 <>
                                     <div className="detail-item">
                                         <div className="detail-label">Title:</div>
-                                        <div className="detail-value">{selectedItem.title || <span className="empty">N/A</span>}</div>
+                                        <div className="detail-value">
+                                            {selectedItem.title || <span className="empty">N/A</span>}
+                                        </div>
                                     </div>
                                     <div className="detail-item">
                                         <div className="detail-label">Description:</div>
-                                        <div className="detail-value" style={{ whiteSpace: 'pre-wrap' }}>
+                                        <div 
+                                            className="detail-value" 
+                                            style={{ 
+                                                whiteSpace: 'pre-wrap',
+                                                maxHeight: '200px',
+                                                overflowY: 'auto',
+                                                padding: '8px',
+                                                backgroundColor: '#f8f9fa',
+                                                borderRadius: '4px'
+                                            }}
+                                        >
                                             {selectedItem.description || <span className="empty">N/A</span>}
                                         </div>
                                     </div>
                                     <div className="detail-item">
                                         <div className="detail-label">Date:</div>
-                                        <div className="detail-value">{selectedItem.date || <span className="empty">N/A</span>}</div>
+                                        <div className="detail-value">
+                                            {selectedItem.date ? new Date(selectedItem.date).toLocaleDateString() : <span className="empty">N/A</span>}
+                                        </div>
                                     </div>
-                                    <div className="detail-item">
-                                        <div className="detail-label">Location:</div>
-                                        <div className="detail-value">{selectedItem.location || <span className="empty">N/A</span>}</div>
-                                    </div>
-                                    {selectedItem.imageUrl && (
+                                    {selectedItem.image ? (
                                         <div className="detail-item">
                                             <div className="detail-label">Image:</div>
                                             <div className="detail-value">
-                                                <img 
-                                                    src={selectedItem.imageUrl} 
-                                                    alt={selectedItem.title || "Program"} 
-                                                    className="img-fluid mt-2"
-                                                    style={{ maxHeight: '200px' }}
-                                                />
+                                                <div className="image-container" style={{
+                                                    position: 'relative',
+                                                    paddingTop: '56.25%',
+                                                    backgroundColor: '#f8f9fa',
+                                                    borderRadius: '4px',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <img 
+                                                        src={selectedItem.image}
+                                                        alt={selectedItem.title || "Program"} 
+                                                        className="img-fluid"
+                                                        style={{
+                                                            position: 'absolute',
+                                                            top: 0,
+                                                            left: 0,
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover'
+                                                        }}
+                                                        loading="lazy"
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.src = '/placeholder.jpg';
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className="mt-2 text-center">
+                                                    <Button 
+                                                        variant="link" 
+                                                        size="sm"
+                                                        onClick={() => window.open(selectedItem.image, '_blank')}
+                                                    >
+                                                        View Full Image
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="detail-item">
+                                            <div className="detail-label">Image:</div>
+                                            <div className="detail-value">
+                                                <span className="empty">No image available</span>
                                             </div>
                                         </div>
                                     )}

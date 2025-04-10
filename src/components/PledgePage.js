@@ -10,7 +10,6 @@ const PledgePage = () => {
     state: "",
     city: "",
     pledges: [],
-    date: new Date().toISOString().split("T")[0],
   });
 
   const [countries, setCountries] = useState([]);
@@ -33,14 +32,24 @@ const PledgePage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(prev => ({ ...prev, countries: true, states: true }));
+        
         const [countriesRes, statesRes] = await Promise.all([
           axios.get("http://localhost:5000/api/public/countries"),
           axios.get("http://localhost:5000/api/public/states")
         ]);
 
-        if (countriesRes.data.success) setCountries(countriesRes.data.data);
-        if (statesRes.data.success) setStates(statesRes.data.data);
+        if (countriesRes.data) {
+          const countriesData = countriesRes.data.data || countriesRes.data;
+          setCountries(countriesData);
+        }
+
+        if (statesRes.data) {
+          const statesData = statesRes.data.data || statesRes.data;
+          setStates(statesData);
+        }
       } catch (err) {
+        console.error("Failed to load location data:", err);
         setMessage({ 
           text: "Failed to load location data. Please refresh the page.", 
           type: "error" 
@@ -55,9 +64,17 @@ const PledgePage = () => {
 
   useEffect(() => {
     if (formData.country && states.length > 0) {
-      const filtered = states.filter(state => 
-        state.country.toString() === formData.country.toString()
-      );
+      const filtered = states.filter(state => {
+        // Handle both possible state-country relationship formats
+        if (state.country) {
+          if (typeof state.country === 'object') {
+            return state.country._id === formData.country;
+          } else {
+            return state.country.toString() === formData.country.toString();
+          }
+        }
+        return false;
+      });
       setFilteredStates(filtered);
     } else {
       setFilteredStates([]);
@@ -107,9 +124,9 @@ const PledgePage = () => {
         state: "",
         city: "",
         pledges: [],
-        date: new Date().toISOString().split("T")[0],
       });
     } catch (error) {
+      console.error("Submission error:", error);
       const errorMsg = error.response?.data?.message || 
                      error.response?.data?.error || 
                      "Submission failed. Please try again.";
@@ -193,7 +210,7 @@ const PledgePage = () => {
                   </option>
                 ))
               ) : (
-                <option disabled>No states available</option>
+                <option disabled>No states available for selected country</option>
               )}
             </select>
           </div>
@@ -206,15 +223,6 @@ const PledgePage = () => {
               value={formData.city} 
               onChange={handleChange}
               required
-            />
-          </div>
-
-          <div className="form-group">
-            <input 
-              type="date" 
-              name="date" 
-              value={formData.date} 
-              onChange={handleChange}
             />
           </div>
 

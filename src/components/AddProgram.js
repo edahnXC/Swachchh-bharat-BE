@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import "./AddProgram.css";
 
 function AddProgram() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -56,7 +58,7 @@ function AddProgram() {
     data.append("image", formData.image);
 
     try {
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:5000/api/admin/programs",
         data,
         {
@@ -94,63 +96,85 @@ function AddProgram() {
     if (fileInput) fileInput.value = "";
   };
 
+  const handleBack = () => {
+    navigate(-1); // Go back to previous page
+  };
+
   return (
-    <div className="add-program-container">
-      <h2>Add New Program</h2>
-      
-      {message.text && (
-        <div className={`message ${message.type}`}>
-          {message.text}
+    <div className="add-program-page">
+      <div className="add-program-container">
+        <div className="header-section">
+          <button onClick={handleBack} className="back-button">
+            &larr; Back
+          </button>
+          <h2>Add New Program</h2>
         </div>
-      )}
+        
+        {message.text && (
+          <div className={`message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="title">Title</label>
-          <input
-            id="title"
-            type="text"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            required
-            placeholder="Enter program title"
-          />
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="title">Title</label>
+            <input
+              id="title"
+              type="text"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              placeholder="Enter program title"
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            required
-            rows="5"
-            placeholder="Enter program description"
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="description">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              rows="5"
+              placeholder="Enter program description"
+            />
+          </div>
 
-        <div className="form-group">
-          <label htmlFor="programImage">Program Image</label>
-          <input
-            id="programImage"
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            required
-          />
-          {preview && (
-            <div className="image-preview">
-              <img src={preview} alt="Preview" />
-            </div>
-          )}
-        </div>
+          <div className="form-group">
+            <label htmlFor="programImage">Program Image</label>
+            <input
+              id="programImage"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              required
+            />
+            {preview && (
+              <div className="image-preview">
+                <img src={preview} alt="Preview" />
+              </div>
+            )}
+          </div>
 
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? "Adding..." : "Add Program"}
-        </button>
-      </form>
+          <div className="button-group">
+            <button type="button" onClick={handleBack} className="secondary-button">
+              Cancel
+            </button>
+            <button type="submit" disabled={isLoading} className="primary-button">
+              {isLoading ? (
+                <>
+                  <span className="spinner"></span> Adding...
+                </>
+              ) : (
+                "Add Program"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

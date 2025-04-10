@@ -44,7 +44,7 @@ exports.loginAdmin = async (req, res) => {
                 role: 'admin'
             }, 
             process.env.JWT_SECRET, 
-            { expiresIn: "2h" }
+            { expiresIn: "8h" }
         );
 
         res.cookie('adminToken', token, {
@@ -213,8 +213,7 @@ exports.getAdminDashboard = (req, res) => {
         admin: req.admin 
     });
 };
-
-const generateReports = async (req, res) => {
+exports.generateReports = async (req, res) => {
     try {
         const { type, year, month } = req.query;
         const currentYear = new Date().getFullYear();
@@ -233,23 +232,7 @@ const generateReports = async (req, res) => {
             endDate = new Date(reportYear, 11, 31, 23, 59, 59);
         }
         
-        // Get all data within the date range
-        const [volunteers, donors, pledges, contacts, programs] = await Promise.all([
-            Volunteer.find({ createdAt: { $gte: startDate, $lte: endDate } }),
-            Donor.find({ createdAt: { $gte: startDate, $lte: endDate } }),
-            Pledge.find({ createdAt: { $gte: startDate, $lte: endDate } }),
-            Contact.find({ createdAt: { $gte: startDate, $lte: endDate } }),
-            Program.find({ date: { $gte: startDate, $lte: endDate } })
-        ]);
-        
-        // Calculate totals
-        const totalVolunteers = volunteers.length;
-        const totalDonations = donors.reduce((sum, donor) => sum + (donor.amount || 0), 0);
-        const totalPledges = pledges.length;
-        const totalMessages = contacts.length;
-        const totalPrograms = programs.length;
-        
-        // Prepare daily/monthly data
+        // Initialize arrays with zeros
         let dailyVolunteers = [];
         let dailyDonations = [];
         let dailyPledges = [];
@@ -259,49 +242,126 @@ const generateReports = async (req, res) => {
         
         if (type === 'monthly') {
             const daysInMonth = new Date(reportYear, reportMonth, 0).getDate();
-            
-            // Initialize arrays with zeros for each day
             dailyVolunteers = Array(daysInMonth).fill(0);
             dailyDonations = Array(daysInMonth).fill(0);
             dailyPledges = Array(daysInMonth).fill(0);
             
-            // Count data per day
-            volunteers.forEach(volunteer => {
-                const day = new Date(volunteer.createdAt).getDate() - 1;
-                dailyVolunteers[day]++;
+            // Get daily data - CHANGED createdAt to date for volunteers and pledges
+            const [volunteersDaily, donorsDaily, pledgesDaily] = await Promise.all([
+                Volunteer.aggregate([
+                    { $match: { date: { $gte: startDate, $lte: endDate } } }, // Changed to date
+                    { 
+                        $group: { 
+                            _id: { $dayOfMonth: "$date" }, // Changed to date
+                            count: { $sum: 1 }
+                        }
+                    }
+                ]),
+                Donor.aggregate([
+                    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+                    { 
+                        $group: { 
+                            _id: { $dayOfMonth: "$createdAt" },
+                            total: { $sum: "$amount" }
+                        }
+                    }
+                ]),
+                Pledge.aggregate([
+                    { $match: { date: { $gte: startDate, $lte: endDate } } }, // Changed to date
+                    { 
+                        $group: { 
+                            _id: { $dayOfMonth: "$date" }, // Changed to date
+                            count: { $sum: 1 }
+                        }
+                    }
+                ])
+            ]);
+            
+            // Process daily data
+            volunteersDaily.forEach(item => {
+                if (item._id >= 1 && item._id <= daysInMonth) {
+                    dailyVolunteers[item._id - 1] = item.count;
+                }
             });
             
-            donors.forEach(donor => {
-                const day = new Date(donor.createdAt).getDate() - 1;
-                dailyDonations[day] += donor.amount || 0;
+            donorsDaily.forEach(item => {
+                if (item._id >= 1 && item._id <= daysInMonth) {
+                    dailyDonations[item._id - 1] = item.total;
+                }
             });
             
-            pledges.forEach(pledge => {
-                const day = new Date(pledge.createdAt).getDate() - 1;
-                dailyPledges[day]++;
+            pledgesDaily.forEach(item => {
+                if (item._id >= 1 && item._id <= daysInMonth) {
+                    dailyPledges[item._id - 1] = item.count;
+                }
             });
         } else {
-            // Initialize arrays with zeros for each month
+            // Yearly report
             monthlyVolunteers = Array(12).fill(0);
             monthlyDonations = Array(12).fill(0);
             monthlyPledges = Array(12).fill(0);
             
-            // Count data per month
-            volunteers.forEach(volunteer => {
-                const month = new Date(volunteer.createdAt).getMonth();
-                monthlyVolunteers[month]++;
+            const [volunteersMonthly, donorsMonthly, pledgesMonthly] = await Promise.all([
+                Volunteer.aggregate([
+                    { $match: { date: { $gte: startDate, $lte: endDate } } }, // Changed to date
+                    { 
+                        $group: { 
+                            _id: { $month: "$date" }, // Changed to date
+                            count: { $sum: 1 }
+                        }
+                    }
+                ]),
+                Donor.aggregate([
+                    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+                    { 
+                        $group: { 
+                            _id: { $month: "$createdAt" },
+                            total: { $sum: "$amount" }
+                        }
+                    }
+                ]),
+                Pledge.aggregate([
+                    { $match: { date: { $gte: startDate, $lte: endDate } } }, // Changed to date
+                    { 
+                        $group: { 
+                            _id: { $month: "$date" }, // Changed to date
+                            count: { $sum: 1 }
+                        }
+                    }
+                ])
+            ]);
+            
+            // Process monthly data
+            volunteersMonthly.forEach(item => {
+                if (item._id >= 1 && item._id <= 12) {
+                    monthlyVolunteers[item._id - 1] = item.count;
+                }
             });
             
-            donors.forEach(donor => {
-                const month = new Date(donor.createdAt).getMonth();
-                monthlyDonations[month] += donor.amount || 0;
+            donorsMonthly.forEach(item => {
+                if (item._id >= 1 && item._id <= 12) {
+                    monthlyDonations[item._id - 1] = item.total;
+                }
             });
             
-            pledges.forEach(pledge => {
-                const month = new Date(pledge.createdAt).getMonth();
-                monthlyPledges[month]++;
+            pledgesMonthly.forEach(item => {
+                if (item._id >= 1 && item._id <= 12) {
+                    monthlyPledges[item._id - 1] = item.count;
+                }
             });
         }
+        
+        // Get totals - CHANGED createdAt to date for volunteers and pledges
+        const [totalVolunteers, totalDonations, totalPledges, totalMessages, totalPrograms] = await Promise.all([
+            Volunteer.countDocuments({ date: { $gte: startDate, $lte: endDate } }), // Changed to date
+            Donor.aggregate([
+                { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+                { $group: { _id: null, total: { $sum: "$amount" } } }
+            ]).then(result => result[0]?.total || 0),
+            Pledge.countDocuments({ date: { $gte: startDate, $lte: endDate } }), // Changed to date
+            Contact.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+            Programme.countDocuments({ date: { $gte: startDate, $lte: endDate } })
+        ]);
         
         res.status(200).json({
             success: true,
@@ -319,10 +379,13 @@ const generateReports = async (req, res) => {
                 monthlyPledges
             }
         });
-    } catch (err) {
-        res.status(500).json({ error: "Server error: " + err.message });
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: "Server Error" });
     }
 };
+
 
 exports.getAdminStats = async (req, res) => {
     try {
@@ -500,6 +563,97 @@ exports.createVolunteer = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Error creating volunteer",
+            error: error.message 
+        });
+    }
+};
+
+exports.updateVolunteer = async (req, res) => {
+    try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid ID format" 
+            });
+        }
+
+        const { country, state, ...otherData } = req.body;
+
+        // Validate country and state if they're being updated
+        if (country || state) {
+            if (country && !isValidObjectId(country)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Invalid country ID format" 
+                });
+            }
+
+            if (state && !isValidObjectId(state)) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: "Invalid state ID format" 
+                });
+            }
+
+            // Verify country exists if being updated
+            if (country) {
+                const countryExists = await Country.findById(country);
+                if (!countryExists) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "Country not found"
+                    });
+                }
+            }
+
+            // Verify state exists and belongs to country if being updated
+            if (state) {
+                const stateCountry = country || (await Volunteer.findById(req.params.id)).country;
+                const stateExists = await State.findOne({ _id: state, country: stateCountry });
+                if (!stateExists) {
+                    return res.status(400).json({
+                        success: false,
+                        message: "State not found or doesn't belong to the country"
+                    });
+                }
+            }
+        }
+
+        const updatedVolunteer = await Volunteer.findByIdAndUpdate(
+            req.params.id,
+            {
+                ...(country && { country }),
+                ...(state && { state }),
+                ...otherData
+            },
+            { new: true, runValidators: true }
+        ).populate('country state', 'name');
+
+        if (!updatedVolunteer) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Volunteer not found" 
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Volunteer updated successfully",
+            data: updatedVolunteer
+        });
+    } catch (error) {
+        console.error("Error updating volunteer:", error);
+        
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Email is already registered" 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: "Error updating volunteer",
             error: error.message 
         });
     }
@@ -1062,9 +1216,16 @@ exports.updateCountry = async (req, res) => {
 
         const { name, code, currency, currencySymbol } = req.body;
         
+        const updatedData = {
+            name,
+            code,
+            currency: currency || 'INR',
+            currencySymbol: currencySymbol || '₹'
+        };
+
         const country = await Country.findByIdAndUpdate(
             req.params.id,
-            { name, code, currency, currencySymbol },
+            updatedData,
             { new: true, runValidators: true }
         );
         
@@ -1093,6 +1254,75 @@ exports.updateCountry = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Error updating country",
+            error: error.message 
+        });
+    }
+};
+
+exports.updateState = async (req, res) => {
+    try {
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid ID format" 
+            });
+        }
+
+        const { name, code, country } = req.body;
+        
+        if (!isValidObjectId(country)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid country ID format" 
+            });
+        }
+
+        // Verify country exists
+        const countryExists = await Country.findById(country);
+        if (!countryExists) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Country not found" 
+            });
+        }
+
+        const updatedData = {
+            name,
+            code,
+            country
+        };
+
+        const state = await State.findByIdAndUpdate(
+            req.params.id,
+            updatedData,
+            { new: true, runValidators: true }
+        ).populate('country', 'name code');
+        
+        if (!state) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "State not found" 
+            });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: "State updated successfully",
+            data: state 
+        });
+    } catch (error) {
+        console.error("Error updating state:", error);
+        
+        if (error.code === 11000) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "State with this name or code already exists in this country" 
+            });
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: "Error updating state",
             error: error.message 
         });
     }
@@ -1278,75 +1508,6 @@ exports.createState = async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: "Error creating state",
-            error: error.message 
-        });
-    }
-};
-exports.updateState = async (req, res) => {
-    try {
-        if (!isValidObjectId(req.params.id)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Invalid ID format" 
-            });
-        }
-
-        const { name, code, country } = req.body;
-        
-        if (!name || !code || !country) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Name, code and country are required" 
-            });
-        }
-
-        if (!isValidObjectId(country)) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Invalid country ID format" 
-            });
-        }
-
-        // Check if country exists
-        const countryExists = await Country.findById(country);
-        if (!countryExists) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Country not found" 
-            });
-        }
-
-        const state = await State.findByIdAndUpdate(
-            req.params.id,
-            { name, code, country },
-            { new: true, runValidators: true }
-        ).populate('country', 'name code');
-        
-        if (!state) {
-            return res.status(404).json({ 
-                success: false, 
-                message: "State not found" 
-            });
-        }
-        
-        res.json({ 
-            success: true, 
-            message: "State updated successfully",
-            data: state 
-        });
-    } catch (error) {
-        console.error("Error updating state:", error);
-        
-        if (error.code === 11000) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "State with this name or code already exists" 
-            });
-        }
-        
-        res.status(500).json({ 
-            success: false, 
-            message: "Error updating state",
             error: error.message 
         });
     }

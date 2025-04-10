@@ -61,7 +61,7 @@ exports.getPrograms = async (req, res) => {
         const programsWithUrls = programs.map(program => ({
             ...program._doc,
             image: program.image ? `${req.protocol}://${req.get('host')}${program.image}` : null
-        }));
+          }));
 
         res.json({
             success: true,
@@ -78,6 +78,7 @@ exports.getPrograms = async (req, res) => {
 };
 
 // Update a program
+
 exports.updateProgram = async (req, res) => {
     try {
         const { id } = req.params;

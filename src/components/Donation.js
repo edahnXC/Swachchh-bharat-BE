@@ -25,7 +25,6 @@ function Donation() {
   const [loadingStates, setLoadingStates] = useState(false);
   const [error, setError] = useState(null);
 
-  // Handle returning from payment page
   useEffect(() => {
     if (location.state?.error) {
       setError(location.state.error);
@@ -38,7 +37,6 @@ function Donation() {
     }
   }, [location.state]);
 
-  // Fetch countries on component mount
   useEffect(() => {
     const fetchCountries = async () => {
       setLoadingCountries(true);
@@ -57,7 +55,6 @@ function Donation() {
     fetchCountries();
   }, []);
 
-  // Fetch states when country changes
   useEffect(() => {
     const fetchStates = async () => {
       if (!formData.country) {
@@ -106,7 +103,6 @@ function Donation() {
         throw new Error('Minimum donation amount is ₹100');
       }
 
-      // Validate all required fields
       const requiredFields = ['name', 'email', 'phone', 'country', 'state', 'city', 'postalCode'];
       const missingFields = requiredFields.filter(field => !formData[field]);
       
@@ -114,7 +110,6 @@ function Donation() {
         throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
       }
 
-      // Store form data in session storage as fallback
       sessionStorage.setItem('donationFormData', JSON.stringify({
         ...formData,
         amount: donationAmount

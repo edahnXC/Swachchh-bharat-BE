@@ -34,6 +34,7 @@ const donorRoutes = require("./routes/donorRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const pledgeRoutes = require("./routes/pledgeRoutes");
 const volunteerRoutes = require("./routes/volunteerRoutes");
+const publicRoutes = require("./routes/publicRoutes"); // Add this line
 
 // Public Routes
 app.get("/api/config/razorpay", (req, res) => {
@@ -49,6 +50,7 @@ app.use("/api/donors", donorRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/pledge", pledgeRoutes);
 app.use("/api/volunteers", volunteerRoutes);
+app.use("/api/public", publicRoutes); // Add this line
 
 // Default Route
 app.get("/", (req, res) => res.json({ 

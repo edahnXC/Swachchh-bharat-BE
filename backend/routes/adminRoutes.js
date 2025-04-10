@@ -4,10 +4,15 @@ const multer = require("multer");
 const path = require("path");
 const crypto = require("crypto");
 const razorpay = require("razorpay");
+const Donor = require("../models/Donor");
 const {
   loginAdmin,
   verifyAdminToken,
   getVolunteers,
+  getVolunteerById,
+  createVolunteer,
+  updateVolunteer,
+  deleteVolunteer,
   getDonors,
   getContacts,
   getPledges,
@@ -24,7 +29,6 @@ const {
   createState,
   updateState,
   deleteState,
-  deleteVolunteer,
   deleteDonor,
   deleteContact,
   createDonation,
@@ -34,8 +38,8 @@ const {
 const {
   addProgram,
   getPrograms,
-  updateProgram,
-  deleteProgram
+  deleteProgram,
+  updateProgram
 } = require("../controllers/programController");
 
 // Initialize Razorpay
@@ -92,11 +96,16 @@ router.get("/dashboard", (req, res) => {
 // PROGRAM ROUTES
 router.post("/programs", uploadProgramImage.single("image"), addProgram);
 router.get("/programs", getPrograms);
-router.put("/programs/:id", uploadProgramImage.single("image"), updateProgram);
 router.delete("/programs/:id", deleteProgram);
+router.put("/programs/:id", uploadProgramImage.single("image"), updateProgram);
 
 // DATA ROUTES
 router.get("/volunteers", getVolunteers);
+router.post("/volunteers", createVolunteer);
+router.get("/volunteers/:id", getVolunteerById);
+router.put("/volunteers/:id", updateVolunteer);
+router.delete("/volunteers/:id", deleteVolunteer);
+
 router.get("/donors", getDonors);
 router.get("/contacts", getContacts);
 router.get("/pledges", getPledges);
@@ -161,7 +170,7 @@ router.post('/donations/verify-payment', async (req, res) => {
         paymentDate: new Date()
       },
       { new: true }
-    );
+    ).populate('country state', 'name code');
 
     if (!donation) {
       return res.status(404).json({
@@ -209,7 +218,6 @@ router.route('/states/:id')
   .delete(deleteState);
 
 // DELETE OPERATIONS
-router.delete("/volunteers/:id", deleteVolunteer);
 router.delete("/donors/:id", deleteDonor);
 router.delete("/contacts/:id", deleteContact);
 
