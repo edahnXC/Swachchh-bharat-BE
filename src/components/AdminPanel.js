@@ -27,7 +27,12 @@ const renderCountry = (country) => {
   if (country && typeof country === 'object' && country.name) return country.name;
   return 'N/A';
 };
-
+const renderState = (state) => {
+    if (!state) return 'N/A';
+    if (typeof state === 'string') return state;
+    if (state && typeof state === 'object' && state.name) return state.name;
+    return 'N/A';
+  };
 const renderAmount = (amount) => {
   if (amount === undefined || amount === null) return 'N/A';
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -1336,7 +1341,7 @@ const AdminPanel = () => {
                                                                 <td>{volunteer.name || 'N/A'}</td>
                                                                 <td>{volunteer.email || 'N/A'}</td>
                                                                 <td>{renderCountry(volunteer.country)}</td>
-                                                                <td>{volunteer.state || 'N/A'}</td>
+                                                                <td>{renderState(volunteer.state)}</td>
                                                                 <td>{volunteer.city || 'N/A'}</td>
                                                                 <td>{volunteer.number || 'N/A'}</td>
                                                                 <td>
@@ -1379,19 +1384,21 @@ const AdminPanel = () => {
                             {activeTab === "donors" && (
                                 <Card>
                                     <Card.Header className="d-flex justify-content-between align-items-center">
-                                        <h5>Donors</h5>
-                                        <div className="search-box">
-                                            <FaSearch className="search-icon" />
-                                            <input
-                                                type="text"
-                                                placeholder="Search donors..."
-                                                value={searchTerm}
-                                                onChange={(e) => {
-                                                    setSearchTerm(e.target.value);
-                                                    setCurrentPage(1);
-                                                }}
-                                            />
+                                    <h5>Donors</h5>
+                                    <div className="d-flex">
+                                        <div className="search-box me-2">
+                                        <FaSearch className="search-icon" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search donors..."
+                                            value={searchTerm}
+                                            onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setCurrentPage(1);
+                                            }}
+                                        />
                                         </div>
+                                    </div>
                                     </Card.Header>
                                     <Card.Body>
                                         {filterData(donors).length === 0 ? (
@@ -1438,7 +1445,7 @@ const AdminPanel = () => {
                                                         ))}
                                                     </tbody>
                                                 </Table>
-                                                {renderPagination(donors)}
+                                                {renderPagination(filterData(donors))}
                                             </>
                                         )}
                                     </Card.Body>
@@ -1449,19 +1456,21 @@ const AdminPanel = () => {
                             {activeTab === "contacts" && (
                                 <Card>
                                     <Card.Header className="d-flex justify-content-between align-items-center">
-                                        <h5>Messages</h5>
-                                        <div className="search-box">
-                                            <FaSearch className="search-icon" />
-                                            <input
-                                                type="text"
-                                                placeholder="Search messages..."
-                                                value={searchTerm}
-                                                onChange={(e) => {
-                                                    setSearchTerm(e.target.value);
-                                                    setCurrentPage(1);
-                                                }}
-                                            />
+                                    <h5>Messages</h5>
+                                    <div className="d-flex">
+                                        <div className="search-box me-2">
+                                        <FaSearch className="search-icon" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search messages..."
+                                            value={searchTerm}
+                                            onChange={(e) => {
+                                            setSearchTerm(e.target.value);
+                                            setCurrentPage(1);
+                                            }}
+                                        />
                                         </div>
+                                    </div>
                                     </Card.Header>
                                     <Card.Body>
                                         {filterData(contacts).length === 0 ? (
@@ -1508,7 +1517,7 @@ const AdminPanel = () => {
                                                         ))}
                                                     </tbody>
                                                 </Table>
-                                                {renderPagination(contacts)}
+                                                {renderPagination(filterData(contacts))}
                                             </>
                                         )}
                                     </Card.Body>
