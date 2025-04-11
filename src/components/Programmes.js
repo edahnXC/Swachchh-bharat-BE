@@ -15,10 +15,8 @@ function Programmes() {
         const fetchPrograms = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/admin/programs", {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
-                });
-                
+                const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/public/getPrograms");
+    
                 if (response.data.success) {
                     setPrograms(response.data.data);
                     setTotalPages(Math.ceil(response.data.data.length / programsPerPage));
@@ -31,7 +29,7 @@ function Programmes() {
                 setLoading(false);
             }
         };
-
+    
         fetchPrograms();
     }, [programsPerPage]);
 

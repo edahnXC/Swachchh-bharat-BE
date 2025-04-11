@@ -19,11 +19,16 @@ connectDB()
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = [
+  'https://delightful-strudel-9135b2.netlify.app'
+];
+
 app.use(cors({
-  origin: "*",
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: allowedOrigins,
+  credentials: true
 }));
+
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Import Routes
