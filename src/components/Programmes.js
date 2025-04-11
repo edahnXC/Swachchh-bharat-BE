@@ -108,7 +108,7 @@ function Programmes() {
 
     return (
         <div className="program-container">
-            <h2 className="heading">📅 Programs</h2>
+            <h2 className="heading"> Programs</h2>
             
             {loading ? (
                 <div className="loading-spinner"></div>
