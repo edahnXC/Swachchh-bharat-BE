@@ -12,7 +12,6 @@ const VolunteerForm = () => {
     city: "",
     number: "",
     message: "",
-    // date: new Date().toISOString().split("T")[0]
   });
 
   const [countries, setCountries] = useState([]);
@@ -111,7 +110,6 @@ const VolunteerForm = () => {
         city: "", 
         number: "", 
         message: "",
-        // date: new Date().toISOString().split("T")[0]
       });
     } catch (err) {
       setError(err.response?.data?.message || "Submission failed. Please try again.");
@@ -226,16 +224,6 @@ const VolunteerForm = () => {
             />
           </div>
 
-          {/* <div className="form-group">
-            <label htmlFor="date">Date</label>
-            <input 
-              type="date" 
-              id="date" 
-              name="date" 
-              value={formData.date} 
-              onChange={handleChange} 
-            />
-          </div> */}
 
           <div className="form-group">
             <label htmlFor="message">Tell us about yourself</label>
