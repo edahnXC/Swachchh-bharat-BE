@@ -94,7 +94,7 @@ const AdminPanel = () => {
     });
     
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
+    const [itemsPerPage] = useState(8);
     const [searchTerm, setSearchTerm] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -311,28 +311,36 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!programForm.title || !programForm.description) {
             setError("Title and description are required");
             return;
         }
-
+    
+        if (programForm.title.length > 100) {
+            setError("Title must be less than 100 characters");
+            return;
+        }
+    
         try {
             const token = localStorage.getItem("adminToken");
             if (!token) {
                 setError("Authentication token not found");
                 return;
             }
-
+    
             const formData = new FormData();
-            formData.append('title', programForm.title);
-            formData.append('description', programForm.description);
+            formData.append('title', programForm.title.trim());
+            formData.append('description', programForm.description.trim());
+            
             if (programForm.date) {
                 formData.append('date', programForm.date);
             }
+            
             if (programForm.image) {
                 formData.append('image', programForm.image);
             }
-
+    
             const endpoint = programForm._id 
                 ? `https://swachchh-bharat-be.onrender.com/api/admin/programs/${programForm._id}`
                 : "https://swachchh-bharat-be.onrender.com/api/admin/programs";
@@ -352,7 +360,7 @@ const AdminPanel = () => {
                     title: response.data.program.title || 'Untitled Program',
                     description: response.data.program.description || 'No description'
                 };
-
+    
                 if (programForm._id) {
                     setPrograms(prev => prev.map(p => 
                         p._id === programForm._id ? updatedProgram : p
@@ -470,7 +478,6 @@ const AdminPanel = () => {
     const currentCountries = filterData(countries).slice(indexOfFirstItem, indexOfLastItem);
     const currentStates = filterData(states).slice(indexOfFirstItem, indexOfLastItem);
 
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const goToHomepage = () => navigate("/");
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -661,6 +668,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!countryForm.name || !countryForm.code) {
             setError("Name and code are required");
             return;
@@ -670,7 +678,12 @@ const AdminPanel = () => {
             setError("Country code must be 2-3 characters");
             return;
         }
-
+    
+        if (countryForm.name.length > 50) {
+            setError("Country name must be less than 50 characters");
+            return;
+        }
+    
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = countryForm._id ? 
@@ -681,7 +694,12 @@ const AdminPanel = () => {
             
             const response = await axios[method](
                 endpoint,
-                countryForm,
+                {
+                    name: countryForm.name.trim(),
+                    code: countryForm.code.trim().toUpperCase(),
+                    currency: countryForm.currency.trim(),
+                    currencySymbol: countryForm.currencySymbol.trim()
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -717,6 +735,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!stateForm.name || !stateForm.code || !stateForm.country) {
             setError("All fields are required");
             return;
@@ -726,7 +745,12 @@ const AdminPanel = () => {
             setError("State code must be 2-3 characters");
             return;
         }
-
+    
+        if (stateForm.name.length > 50) {
+            setError("State name must be less than 50 characters");
+            return;
+        }
+    
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = stateForm._id ? 
@@ -737,7 +761,11 @@ const AdminPanel = () => {
             
             const response = await axios[method](
                 endpoint,
-                stateForm,
+                {
+                    name: stateForm.name.trim(),
+                    code: stateForm.code.trim().toUpperCase(),
+                    country: stateForm.country
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -772,11 +800,27 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!volunteerForm.name || !volunteerForm.email || !volunteerForm.number) {
             setError("Name, email and phone number are required");
             return;
         }
-
+    
+        if (volunteerForm.name.length > 50) {
+            setError("Name must be less than 50 characters");
+            return;
+        }
+    
+        if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(volunteerForm.email)) {
+            setError("Please enter a valid email address");
+            return;
+        }
+    
+        if (!/^[0-9]{10,15}$/.test(volunteerForm.number)) {
+            setError("Please enter a valid phone number (10-15 digits)");
+            return;
+        }
+    
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = volunteerForm._id ? 
@@ -787,7 +831,15 @@ const AdminPanel = () => {
             
             const response = await axios[method](
                 endpoint,
-                volunteerForm,
+                {
+                    name: volunteerForm.name.trim(),
+                    email: volunteerForm.email.trim(),
+                    number: volunteerForm.number.trim(),
+                    city: volunteerForm.city.trim(),
+                    country: volunteerForm.country,
+                    state: volunteerForm.state,
+                    message: volunteerForm.message.trim()
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             
@@ -849,31 +901,66 @@ const AdminPanel = () => {
 
     const renderPagination = (items) => {
         const filteredItems = filterData(items);
-        const pageNumbers = [];
-        for (let i = 1; i <= Math.ceil(filteredItems.length / itemsPerPage); i++) {
-            pageNumbers.push(i);
-        }
-
-        if (pageNumbers.length <= 1) return null;
-
+        const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+        
+        if (totalPages <= 1) return null;
+    
+        // Show limited page numbers for better UX
+        const getPageNumbers = () => {
+            const pages = [];
+            const maxVisiblePages = 5;
+            
+            if (totalPages <= maxVisiblePages) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                const half = Math.floor(maxVisiblePages / 2);
+                let start = currentPage - half;
+                let end = currentPage + half;
+                
+                if (start < 1) {
+                    start = 1;
+                    end = maxVisiblePages;
+                }
+                
+                if (end > totalPages) {
+                    end = totalPages;
+                    start = totalPages - maxVisiblePages + 1;
+                }
+                
+                if (start > 1) pages.push(1);
+                if (start > 2) pages.push('...');
+                
+                for (let i = start; i <= end; i++) pages.push(i);
+                
+                if (end < totalPages - 1) pages.push('...');
+                if (end < totalPages) pages.push(totalPages);
+            }
+            
+            return pages;
+        };
+    
         return (
             <Pagination className="mt-3 justify-content-center">
                 <Pagination.Prev 
-                    onClick={() => setCurrentPage(prev => (prev > 1 ? prev - 1 : prev))} 
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
                     disabled={currentPage === 1}
                 />
-                {pageNumbers.map(number => (
-                    <Pagination.Item
-                        key={number}
-                        active={number === currentPage}
-                        onClick={() => paginate(number)}
-                    >
-                        {number}
-                    </Pagination.Item>
+                {getPageNumbers().map((number, index) => (
+                    number === '...' ? (
+                        <Pagination.Ellipsis key={`ellipsis-${index}`} />
+                    ) : (
+                        <Pagination.Item
+                            key={number}
+                            active={number === currentPage}
+                            onClick={() => setCurrentPage(number)}
+                        >
+                            {number}
+                        </Pagination.Item>
+                    )
                 ))}
                 <Pagination.Next 
-                    onClick={() => setCurrentPage(prev => (prev < pageNumbers.length ? prev + 1 : prev))} 
-                    disabled={currentPage === pageNumbers.length}
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
+                    disabled={currentPage === totalPages}
                 />
             </Pagination>
         );
@@ -1445,7 +1532,7 @@ const AdminPanel = () => {
                                                         ))}
                                                     </tbody>
                                                 </Table>
-                                                {renderPagination(filterData(donors))}
+                                                {renderPagination(donors)}
                                             </>
                                         )}
                                     </Card.Body>
@@ -1517,7 +1604,7 @@ const AdminPanel = () => {
                                                         ))}
                                                     </tbody>
                                                 </Table>
-                                                {renderPagination(filterData(contacts))}
+                                                {renderPagination(contacts)}
                                             </>
                                         )}
                                     </Card.Body>
