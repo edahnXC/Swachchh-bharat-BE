@@ -33,6 +33,7 @@ const renderState = (state) => {
     if (state && typeof state === 'object' && state.name) return state.name;
     return 'N/A';
   };
+
 const renderAmount = (amount) => {
   if (amount === undefined || amount === null) return 'N/A';
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -1919,7 +1920,7 @@ const AdminPanel = () => {
                                                                 <td>{indexOfFirstItem + index + 1}</td>
                                                                 <td>{state.name}</td>
                                                                 <td>{state.code}</td>
-                                                                <td>{state.country?.name || 'N/A'}</td>
+                                                                <td>{state.country?.name || (typeof state.country === 'string' ? state.country : 'N/A')}</td>
                                                                 <td>
                                                                     <Button 
                                                                         variant="info" 
