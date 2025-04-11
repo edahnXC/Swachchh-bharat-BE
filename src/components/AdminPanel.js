@@ -24,16 +24,15 @@ Chart.register(...registerables);
 const renderCountry = (country) => {
   if (!country) return 'N/A';
   if (typeof country === 'string') return country;
-  if (country.name) return country.name;
+  if (country && typeof country === 'object' && country.name) return country.name;
   return 'N/A';
 };
-
 const renderState = (state) => {
-  if (!state) return 'N/A';
-  if (typeof state === 'string') return state;
-  if (state.name) return state.name;
-  return 'N/A';
-};
+    if (!state) return 'N/A';
+    if (typeof state === 'string') return state;
+    if (state && typeof state === 'object' && state.name) return state.name;
+    return 'N/A';
+  };
 
 const renderAmount = (amount) => {
   if (amount === undefined || amount === null) return 'N/A';
@@ -152,6 +151,7 @@ const AdminPanel = () => {
     
             const headers = { Authorization: `Bearer ${token}` };
             
+            // Fetch admin profile first if not already loaded
             if (!adminDetails.username) {
                 const profileResponse = await axios.get("https://swachchh-bharat-be.onrender.com/api/admin/profile", { headers });
                 if (profileResponse.data.success) {
@@ -163,6 +163,7 @@ const AdminPanel = () => {
                 }
             }
     
+            // Only fetch data for the current tab and dashboard stats
             const endpoints = [];
             
             if (tab === "volunteers" || tab === "dashboard") {
@@ -195,19 +196,26 @@ const AdminPanel = () => {
             const responses = await Promise.all(endpoints);
             let responseIndex = 0;
     
+            // Process and set data based on endpoints
             if (tab === "volunteers" || tab === "dashboard") {
                 const volunteersData = responses[responseIndex++]?.data?.data || [];
                 setVolunteers(volunteersData.map(v => ({
                     ...v,
-                    country: v.country ? (v.country.name || v.country) : 'N/A',
-                    state: v.state ? (v.state.name || v.state) : 'N/A'
+                    country: (v.country && typeof v.country === 'object' && v.country.name) 
+                        ? v.country.name 
+                        : (v.country || 'N/A'),
+                    state: (v.state && typeof v.state === 'object' && v.state.name) 
+                        ? v.state.name 
+                        : (v.state || 'N/A')
                 })));
             }
             if (tab === "donors" || tab === "dashboard") {
                 const donorsData = responses[responseIndex++]?.data?.data || [];
                 setDonors(donorsData.map(d => ({
                     ...d,
-                    country: d.country ? (d.country.name || d.country) : 'N/A',
+                    country: (d.country && typeof d.country === 'object' && d.country.name) 
+                        ? d.country.name 
+                        : (d.country || 'N/A'),
                     amount: d.amount || 0
                 })));
             }
@@ -228,7 +236,9 @@ const AdminPanel = () => {
                 const pledgesData = responses[responseIndex++]?.data?.data || [];
                 setPledges(pledgesData.map(p => ({
                     ...p,
-                    country: p.country ? (p.country.name || p.country) : 'N/A',
+                    country: (p.country && typeof p.country === 'object' && p.country.name) 
+                        ? p.country.name 
+                        : (p.country || 'N/A'),
                     pledges: Array.isArray(p.pledges) ? p.pledges : [p.pledges || 'N/A']
                 })));
             }
@@ -236,13 +246,10 @@ const AdminPanel = () => {
                 setCountries(responses[responseIndex++]?.data?.data || []);
             }
             if (tab === "states" || tab === "dashboard") {
-                const statesData = responses[responseIndex++]?.data?.data || [];
-                setStates(statesData.map(s => ({
-                    ...s,
-                    country: s.country ? (s.country.name || s.country) : 'N/A'
-                })));
+                setStates(responses[responseIndex++]?.data?.data || []);
             }
     
+            // Always fetch stats when dashboard is loaded
             if (tab === "dashboard") {
                 await fetchAdminStats();
             }
@@ -261,12 +268,14 @@ const AdminPanel = () => {
     const handleProgramImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Validate file type
             const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
             if (!validTypes.includes(file.type)) {
                 setError("Only JPG, PNG, or GIF images are allowed");
                 return;
             }
     
+            // Validate file size (5MB max)
             if (file.size > 5 * 1024 * 1024) {
                 setError("Image size must be less than 5MB");
                 return;
@@ -303,6 +312,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!programForm.title || !programForm.description) {
             setError("Title and description are required");
             return;
@@ -469,6 +479,7 @@ const AdminPanel = () => {
     const currentCountries = filterData(countries).slice(indexOfFirstItem, indexOfLastItem);
     const currentStates = filterData(states).slice(indexOfFirstItem, indexOfLastItem);
 
+
     const goToHomepage = () => navigate("/");
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -591,6 +602,7 @@ const AdminPanel = () => {
             
             updateState[type](prev => prev.filter(item => item._id !== id));
             
+            // Update stats if we're on dashboard
             if (activeTab === "dashboard") {
                 fetchAdminStats();
             }
@@ -657,6 +669,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!countryForm.name || !countryForm.code) {
             setError("Name and code are required");
             return;
@@ -723,6 +736,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!stateForm.name || !stateForm.code || !stateForm.country) {
             setError("All fields are required");
             return;
@@ -787,6 +801,7 @@ const AdminPanel = () => {
         setError("");
         setSuccess("");
         
+        // Validation
         if (!volunteerForm.name || !volunteerForm.email || !volunteerForm.number) {
             setError("Name, email and phone number are required");
             return;
@@ -891,6 +906,7 @@ const AdminPanel = () => {
         
         if (totalPages <= 1) return null;
     
+        // Show limited page numbers for better UX
         const getPageNumbers = () => {
             const pages = [];
             const maxVisiblePages = 5;
@@ -959,6 +975,7 @@ const AdminPanel = () => {
             'July', 'August', 'September', 'October', 'November', 'December'
         ];
     
+        // Volunteers Chart
         const volunteersData = {
             labels: reportType === 'monthly' ? 
                 Array.from({ length: new Date(reportYear, reportMonth, 0).getDate() }, (_, i) => i + 1) :
@@ -975,6 +992,7 @@ const AdminPanel = () => {
             }]
         };
     
+        // Donations Chart
         const donationsData = {
             labels: reportType === 'monthly' ? 
                 Array.from({ length: new Date(reportYear, reportMonth, 0).getDate() }, (_, i) => i + 1) :
@@ -991,6 +1009,7 @@ const AdminPanel = () => {
             }]
         };
     
+        // Pledges Chart
         const pledgesData = {
             labels: reportType === 'monthly' ? 
                 Array.from({ length: new Date(reportYear, reportMonth, 0).getDate() }, (_, i) => i + 1) :
@@ -1007,6 +1026,7 @@ const AdminPanel = () => {
             }]
         };
     
+        // Summary Pie Chart
         const summaryData = {
             labels: ['Volunteers', 'Donations (₹)', 'Pledges', 'Messages', 'Programs'],
             datasets: [{
@@ -1035,6 +1055,7 @@ const AdminPanel = () => {
             }]
         };
     
+        // Common chart options
         const commonOptions = {
             responsive: true,
             maintainAspectRatio: false,
@@ -2243,8 +2264,7 @@ const AdminPanel = () => {
                             >
                                 <option value="">Select Country</option>
                                 {countries.map(country => (
-                                    <option key={country._id} value={country._id}>
-                                        {country.name} ({country.code})
+                                    <option key={country._id} value={country._id}>                                    {country.name} ({country.code})
                                     </option>
                                 ))}
                             </Form.Select>
@@ -2309,7 +2329,7 @@ const AdminPanel = () => {
                         <Form.Group className="mb-3">
                             <Form.Label>Phone Number *</Form.Label>
                             <Form.Control 
-                                type="tel" 
+                                type="text" 
                                 value={volunteerForm.number}
                                 onChange={(e) => setVolunteerForm({...volunteerForm, number: e.target.value})}
                                 required
@@ -2362,7 +2382,6 @@ const AdminPanel = () => {
                                 rows={3}
                                 value={volunteerForm.message}
                                 onChange={(e) => setVolunteerForm({...volunteerForm, message: e.target.value})}
-                                placeholder="Your skills, interests, availability, etc."
                             />
                         </Form.Group>
                         {error && <Alert variant="danger">{error}</Alert>}
