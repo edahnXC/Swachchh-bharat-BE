@@ -28,7 +28,7 @@ const VolunteerForm = () => {
     const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const response = await axios.get("http://localhost:5000/api/public/countries");
+        const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/public/countries");
         console.log("Countries API response:", response.data);
         // Handle both possible response formats
         const countriesData = response.data.data || response.data || [];
@@ -43,7 +43,7 @@ const VolunteerForm = () => {
     const fetchStates = async () => {
       setLoadingStates(true);
       try {
-        const response = await axios.get("http://localhost:5000/api/public/states");
+        const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/public/states");
         console.log("States API response:", response.data);
         // Handle both possible response formats
         const statesData = response.data.data || response.data || [];
@@ -101,7 +101,7 @@ const VolunteerForm = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/volunteers", formData);
+      const response = await axios.post("https://swachchh-bharat-be.onrender.com/api/volunteers", formData);
       setSuccess(response.data.message || "Thank you for your application! We'll contact you soon.");
       setFormData({ 
         name: "", 

@@ -20,10 +20,10 @@ connectDB()
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
-  credentials: true,
+  origin: "*",
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

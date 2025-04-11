@@ -36,7 +36,7 @@ const AdminLogin = ({ setIsAdmin }) => {
 
         try {
             const response = await axios.post(
-                "http://localhost:5000/api/admin/login", 
+                "https://swachchh-bharat-be.onrender.com/api/admin/login", 
                 { username, password },
                 { withCredentials: true }
             );

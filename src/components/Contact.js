@@ -19,7 +19,7 @@ function Contact() {
     e.preventDefault();
 
     try {
-      const response = await axios.post("http://localhost:5000/api/contact", formData);
+      const response = await axios.post("https://swachchh-bharat-be.onrender.com/api/contact", formData);
       alert(response.data.message); // Show success message
       setFormData({ name: "", email: "", subject: "", message: "" }); // Clear form
     } catch (error) {

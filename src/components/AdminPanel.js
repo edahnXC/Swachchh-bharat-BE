@@ -24,7 +24,7 @@ Chart.register(...registerables);
 const renderCountry = (country) => {
   if (!country) return 'N/A';
   if (typeof country === 'string') return country;
-  if (typeof country === 'object' && country.name) return country.name;
+  if (country && typeof country === 'object' && country.name) return country.name;
   return 'N/A';
 };
 
@@ -122,7 +122,7 @@ const AdminPanel = () => {
     const fetchAdminStats = async () => {
         try {
             const token = localStorage.getItem("adminToken");
-            const response = await axios.get("http://localhost:5000/api/admin/stats", {
+            const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/admin/stats", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -147,7 +147,7 @@ const AdminPanel = () => {
             
             // Fetch admin profile first if not already loaded
             if (!adminDetails.username) {
-                const profileResponse = await axios.get("http://localhost:5000/api/admin/profile", { headers });
+                const profileResponse = await axios.get("https://swachchh-bharat-be.onrender.com/api/admin/profile", { headers });
                 if (profileResponse.data.success) {
                     setAdminDetails(prev => ({
                         ...prev,
@@ -161,25 +161,25 @@ const AdminPanel = () => {
             const endpoints = [];
             
             if (tab === "volunteers" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/volunteers", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/volunteers", { headers }));
             }
             if (tab === "donors" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/donors", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/donors", { headers }));
             }
             if (tab === "contacts" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/contacts", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/contacts", { headers }));
             }
             if (tab === "programs" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/programs", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/programs", { headers }));
             }
             if (tab === "pledges" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/pledges", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/pledges", { headers }));
             }
             if (tab === "countries" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/countries", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/countries", { headers }));
             }
             if (tab === "states" || tab === "dashboard") {
-                endpoints.push(axios.get("http://localhost:5000/api/admin/states", { headers }));
+                endpoints.push(axios.get("https://swachchh-bharat-be.onrender.com/api/admin/states", { headers }));
             }
     
             if (endpoints.length === 0) {
@@ -195,15 +195,21 @@ const AdminPanel = () => {
                 const volunteersData = responses[responseIndex++]?.data?.data || [];
                 setVolunteers(volunteersData.map(v => ({
                     ...v,
-                    country: v.country?.name || v.country || 'N/A',
-                    state: v.state?.name || v.state || 'N/A'
+                    country: (v.country && typeof v.country === 'object' && v.country.name) 
+                        ? v.country.name 
+                        : (v.country || 'N/A'),
+                    state: (v.state && typeof v.state === 'object' && v.state.name) 
+                        ? v.state.name 
+                        : (v.state || 'N/A')
                 })));
             }
             if (tab === "donors" || tab === "dashboard") {
                 const donorsData = responses[responseIndex++]?.data?.data || [];
                 setDonors(donorsData.map(d => ({
                     ...d,
-                    country: d.country?.name || d.country || 'N/A',
+                    country: (d.country && typeof d.country === 'object' && d.country.name) 
+                        ? d.country.name 
+                        : (d.country || 'N/A'),
                     amount: d.amount || 0
                 })));
             }
@@ -224,7 +230,9 @@ const AdminPanel = () => {
                 const pledgesData = responses[responseIndex++]?.data?.data || [];
                 setPledges(pledgesData.map(p => ({
                     ...p,
-                    country: p.country?.name || p.country || 'N/A',
+                    country: (p.country && typeof p.country === 'object' && p.country.name) 
+                        ? p.country.name 
+                        : (p.country || 'N/A'),
                     pledges: Array.isArray(p.pledges) ? p.pledges : [p.pledges || 'N/A']
                 })));
             }
@@ -279,7 +287,6 @@ const AdminPanel = () => {
             reader.readAsDataURL(file);
         }
     };
-    
 
     const handleEditProgram = (program) => {
         setProgramForm({
@@ -288,91 +295,91 @@ const AdminPanel = () => {
             description: program.description || "",
             date: program.date ? new Date(program.date).toISOString().split('T')[0] : "",
             image: null,
-            imagePreview: program.image || "", // Use the full image URL here
+            imagePreview: program.image || "",
             existingImage: program.image || ""
         });
         setShowProgramModal(true);
     };
 
-const handleProgramSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    
-    if (!programForm.title || !programForm.description) {
-        setError("Title and description are required");
-        return;
-    }
-
-    try {
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-            setError("Authentication token not found");
+    const handleProgramSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setSuccess("");
+        
+        if (!programForm.title || !programForm.description) {
+            setError("Title and description are required");
             return;
         }
 
-        const formData = new FormData();
-        formData.append('title', programForm.title);
-        formData.append('description', programForm.description);
-        if (programForm.date) {
-            formData.append('date', programForm.date);
-        }
-        if (programForm.image) {
-            formData.append('image', programForm.image);
-        }
-
-        const endpoint = programForm._id 
-            ? `http://localhost:5000/api/admin/programs/${programForm._id}`
-            : "http://localhost:5000/api/admin/programs";
-        
-        const method = programForm._id ? "put" : "post";
-        
-        const response = await axios[method](endpoint, formData, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data'
+        try {
+            const token = localStorage.getItem("adminToken");
+            if (!token) {
+                setError("Authentication token not found");
+                return;
             }
-        });
-        
-        if (response.data.success) {
-            const updatedProgram = {
-                ...response.data.program,
-                title: response.data.program.title || 'Untitled Program',
-                description: response.data.program.description || 'No description'
-            };
 
-            if (programForm._id) {
-                setPrograms(prev => prev.map(p => 
-                    p._id === programForm._id ? updatedProgram : p
-                ));
-                setSuccess("Program updated successfully!");
-            } else {
-                setPrograms(prev => [...prev, updatedProgram]);
-                setSuccess("Program added successfully!");
+            const formData = new FormData();
+            formData.append('title', programForm.title);
+            formData.append('description', programForm.description);
+            if (programForm.date) {
+                formData.append('date', programForm.date);
             }
+            if (programForm.image) {
+                formData.append('image', programForm.image);
+            }
+
+            const endpoint = programForm._id 
+                ? `https://swachchh-bharat-be.onrender.com/api/admin/programs/${programForm._id}`
+                : "https://swachchh-bharat-be.onrender.com/api/admin/programs";
             
-            setTimeout(() => setSuccess(""), 3000);
-            setShowProgramModal(false);
-            setProgramForm({
-                title: "",
-                description: "",
-                date: "",
-                image: null,
-                imagePreview: "",
-                existingImage: ""
+            const method = programForm._id ? "put" : "post";
+            
+            const response = await axios[method](endpoint, formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data'
+                }
             });
-        } else {
-            setError(response.data.message || "Failed to save program");
+            
+            if (response.data.success) {
+                const updatedProgram = {
+                    ...response.data.program,
+                    title: response.data.program.title || 'Untitled Program',
+                    description: response.data.program.description || 'No description'
+                };
+
+                if (programForm._id) {
+                    setPrograms(prev => prev.map(p => 
+                        p._id === programForm._id ? updatedProgram : p
+                    ));
+                    setSuccess("Program updated successfully!");
+                } else {
+                    setPrograms(prev => [...prev, updatedProgram]);
+                    setSuccess("Program added successfully!");
+                }
+                
+                setTimeout(() => setSuccess(""), 3000);
+                setShowProgramModal(false);
+                setProgramForm({
+                    title: "",
+                    description: "",
+                    date: "",
+                    image: null,
+                    imagePreview: "",
+                    existingImage: ""
+                });
+            } else {
+                setError(response.data.message || "Failed to save program");
+            }
+        } catch (error) {
+            console.error("Error saving program:", error);
+            const errorMessage = error.response?.data?.message || 
+                                error.message || 
+                                "Failed to save program. Please try again.";
+            setError(errorMessage);
+            setTimeout(() => setError(""), 3000);
         }
-    } catch (error) {
-        console.error("Error saving program:", error);
-        const errorMessage = error.response?.data?.message || 
-                            error.message || 
-                            "Failed to save program. Please try again.";
-        setError(errorMessage);
-        setTimeout(() => setError(""), 3000);
-    }
-};
+    };
 
     const generateReportData = useCallback(async () => {
         const token = localStorage.getItem("adminToken");
@@ -382,7 +389,7 @@ const handleProgramSubmit = async (e) => {
             setLoading(true);
             const headers = { Authorization: `Bearer ${token}` };
             const response = await axios.get(
-                `http://localhost:5000/api/admin/reports?type=${reportType}&year=${reportYear}&month=${reportMonth}`,
+                `https://swachchh-bharat-be.onrender.com/api/admin/reports?type=${reportType}&year=${reportYear}&month=${reportMonth}`,
                 { headers }
             );
 
@@ -559,11 +566,11 @@ const handleProgramSubmit = async (e) => {
             const token = localStorage.getItem("adminToken");
             let endpoint = '';
             if (type === "countries") {
-                endpoint = `http://localhost:5000/api/admin/countries/${id}`;
+                endpoint = `https://swachchh-bharat-be.onrender.com/api/admin/countries/${id}`;
             } else if (type === "states") {
-                endpoint = `http://localhost:5000/api/admin/states/${id}`;
+                endpoint = `https://swachchh-bharat-be.onrender.com/api/admin/states/${id}`;
             } else {
-                endpoint = `http://localhost:5000/api/admin/${type}/${id}`;
+                endpoint = `https://swachchh-bharat-be.onrender.com/api/admin/${type}/${id}`;
             }
             
             await axios.delete(endpoint, {
@@ -616,7 +623,7 @@ const handleProgramSubmit = async (e) => {
         try {
             const token = localStorage.getItem("adminToken");
             const response = await axios.put(
-                "http://localhost:5000/api/admin/profile", 
+                "https://swachchh-bharat-be.onrender.com/api/admin/profile", 
                 {
                     username: adminDetails.username,
                     email: adminDetails.email,
@@ -662,8 +669,8 @@ const handleProgramSubmit = async (e) => {
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = countryForm._id ? 
-                `http://localhost:5000/api/admin/countries/${countryForm._id}` : 
-                "http://localhost:5000/api/admin/countries";
+                `https://swachchh-bharat-be.onrender.com/api/admin/countries/${countryForm._id}` : 
+                "https://swachchh-bharat-be.onrender.com/api/admin/countries";
                 
             const method = countryForm._id ? "put" : "post";
             
@@ -718,8 +725,8 @@ const handleProgramSubmit = async (e) => {
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = stateForm._id ? 
-                `http://localhost:5000/api/admin/states/${stateForm._id}` : 
-                "http://localhost:5000/api/admin/states";
+                `https://swachchh-bharat-be.onrender.com/api/admin/states/${stateForm._id}` : 
+                "https://swachchh-bharat-be.onrender.com/api/admin/states";
                 
             const method = stateForm._id ? "put" : "post";
             
@@ -768,8 +775,8 @@ const handleProgramSubmit = async (e) => {
         try {
             const token = localStorage.getItem("adminToken");
             const endpoint = volunteerForm._id ? 
-                `http://localhost:5000/api/admin/volunteers/${volunteerForm._id}` : 
-                "http://localhost:5000/api/admin/volunteers";
+                `https://swachchh-bharat-be.onrender.com/api/admin/volunteers/${volunteerForm._id}` : 
+                "https://swachchh-bharat-be.onrender.com/api/admin/volunteers";
                 
             const method = volunteerForm._id ? "put" : "post";
             
@@ -1556,7 +1563,7 @@ const handleProgramSubmit = async (e) => {
                                                                 <td>
                                                                 {program.image ? (
                                                                     <img 
-                                                                        src={program.image}  // Use the full URL from backend
+                                                                        src={program.image}
                                                                         alt={program.title || 'Program'} 
                                                                         width="50" 
                                                                         className="img-thumbnail"
@@ -2160,8 +2167,7 @@ const handleProgramSubmit = async (e) => {
                             >
                                 <option value="">Select Country</option>
                                 {countries.map(country => (
-                                    <option key={country._id} value={country._id}>
-                                        {country.name} ({country.code})
+                                    <option key={country._id} value={country._id}>                                    {country.name} ({country.code})
                                     </option>
                                 ))}
                             </Form.Select>
@@ -2188,7 +2194,7 @@ const handleProgramSubmit = async (e) => {
             </Modal>
 
             {/* Volunteer Modal */}
-             <Modal show={showVolunteerModal} onHide={() => {
+            <Modal show={showVolunteerModal} onHide={() => {
                 setShowVolunteerModal(false);
                 setVolunteerForm({
                     name: "",
@@ -2345,60 +2351,59 @@ const handleProgramSubmit = async (e) => {
                             </Col>
                         </Row>
                         <Form.Group className="mb-3">
-    <Form.Label>Program Image</Form.Label>
-    <div className="d-flex align-items-center mb-3">
-        {programForm.imagePreview ? (
-            <img 
-                src={programForm.imagePreview} 
-                alt="Preview" 
-                className="img-thumbnail me-3"
-                style={{ maxHeight: '150px' }}
-            />
-        ) : programForm.existingImage ? (
-            <img 
-                src={programForm.existingImage} 
-                alt="Current" 
-                className="img-thumbnail me-3"
-                style={{ maxHeight: '150px' }}
-                onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/placeholder.jpg';
-                }}
-            />
-        ) : (
-            <div className="text-muted me-3" style={{ width: '150px', height: '150px', border: '1px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                No image selected
-            </div>
-        )}
-    </div>
-    <div className="d-flex">
-        <Form.Control 
-            type="file" 
-            accept="image/*"
-            onChange={handleProgramImageChange}
-            className="me-2"
-        />
-        {programForm.existingImage && (
-            <Button 
-                variant="outline-danger" 
-                onClick={() => {
-                    setProgramForm(prev => ({
-                        ...prev,
-                        image: null,
-                        imagePreview: "",
-                        existingImage: ""
-                    }));
-                    document.getElementById('programImageInput').value = '';
-                }}
-            >
-                Remove
-            </Button>
-        )}
-    </div>
-    <Form.Text className="text-muted">
-        Recommended size: 1200x630 pixels (max 5MB)
-    </Form.Text>
-</Form.Group>
+                            <Form.Label>Program Image</Form.Label>
+                            <div className="d-flex align-items-center mb-3">
+                                {programForm.imagePreview ? (
+                                    <img 
+                                        src={programForm.imagePreview} 
+                                        alt="Preview" 
+                                        className="img-thumbnail me-3"
+                                        style={{ maxHeight: '150px' }}
+                                    />
+                                ) : programForm.existingImage ? (
+                                    <img 
+                                        src={programForm.existingImage} 
+                                        alt="Current" 
+                                        className="img-thumbnail me-3"
+                                        style={{ maxHeight: '150px' }}
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = '/placeholder.jpg';
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="text-muted me-3" style={{ width: '150px', height: '150px', border: '1px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        No image selected
+                                    </div>
+                                )}
+                            </div>
+                            <div className="d-flex">
+                                <Form.Control 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleProgramImageChange}
+                                    className="me-2"
+                                />
+                                {programForm.existingImage && (
+                                    <Button 
+                                        variant="outline-danger" 
+                                        onClick={() => {
+                                            setProgramForm(prev => ({
+                                                ...prev,
+                                                image: null,
+                                                imagePreview: "",
+                                                existingImage: ""
+                                            }));
+                                        }}
+                                    >
+                                        Remove
+                                    </Button>
+                                )}
+                            </div>
+                            <Form.Text className="text-muted">
+                                Recommended size: 1200x630 pixels (max 5MB)
+                            </Form.Text>
+                        </Form.Group>
                         {error && <Alert variant="danger">{error}</Alert>}
                         {success && <Alert variant="success">{success}</Alert>}
                         <div className="d-flex justify-content-end">

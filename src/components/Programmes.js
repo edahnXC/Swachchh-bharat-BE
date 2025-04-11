@@ -15,7 +15,7 @@ function Programmes() {
         const fetchPrograms = async () => {
             try {
                 setLoading(true);
-                const response = await axios.get("http://localhost:5000/api/admin/programs", {
+                const response = await axios.get("https://swachchh-bharat-be.onrender.com/api/admin/programs", {
                     headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
                 });
                 

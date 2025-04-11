@@ -41,7 +41,7 @@ function Donation() {
     const fetchCountries = async () => {
       setLoadingCountries(true);
       try {
-        const response = await axios.get('http://localhost:5000/api/public/countries', {
+        const response = await axios.get('https://swachchh-bharat-be.onrender.com/api/public/countries', {
           timeout: 10000
         });
         setCountries(response.data.data || []);
@@ -65,7 +65,7 @@ function Donation() {
       setLoadingStates(true);
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/public/states?country=${formData.country}`,
+          `https://swachchh-bharat-be.onrender.com/api/public/states?country=${formData.country}`,
           { timeout: 10000 }
         );
         setStates(response.data.data || []);
@@ -116,7 +116,7 @@ function Donation() {
       }));
 
       const response = await axios.post(
-        'http://localhost:5000/api/donors/donate',
+        'https://swachchh-bharat-be.onrender.com/api/donors/donate',
         {
           ...formData,
           amount: donationAmount

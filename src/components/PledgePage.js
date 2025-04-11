@@ -35,8 +35,8 @@ const PledgePage = () => {
         setLoading(prev => ({ ...prev, countries: true, states: true }));
         
         const [countriesRes, statesRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/public/countries"),
-          axios.get("http://localhost:5000/api/public/states")
+          axios.get("https://swachchh-bharat-be.onrender.com/api/public/countries"),
+          axios.get("https://swachchh-bharat-be.onrender.com/api/public/states")
         ]);
 
         if (countriesRes.data) {
@@ -112,7 +112,7 @@ const PledgePage = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/pledge", formData);
+      const response = await axios.post("https://swachchh-bharat-be.onrender.com/api/pledge", formData);
       setMessage({ 
         text: response.data.message || "Thank you for your pledge!", 
         type: "success" 
