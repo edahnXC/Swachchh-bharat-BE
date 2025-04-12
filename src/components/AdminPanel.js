@@ -27,12 +27,13 @@ const renderCountry = (country) => {
   if (country && typeof country === 'object' && country.name) return country.name;
   return 'N/A';
 };
+
 const renderState = (state) => {
-    if (!state) return 'N/A';
-    if (typeof state === 'string') return state;
-    if (state && typeof state === 'object' && state.name) return state.name;
-    return 'N/A';
-  };
+  if (!state) return 'N/A';
+  if (typeof state === 'string') return state;
+  if (state && typeof state === 'object' && state.name) return state.name;
+  return 'N/A';
+};
 
 const renderAmount = (amount) => {
   if (amount === undefined || amount === null) return 'N/A';
@@ -382,8 +383,12 @@ const AdminPanel = () => {
                     imagePreview: "",
                     existingImage: ""
                 });
+                setActiveTab("programs");
+                navigate("/admin/panel/programs");
             } else {
                 setError(response.data.message || "Failed to save program");
+                setActiveTab("programs");
+                navigate("/admin/panel/programs");
             }
         } catch (error) {
             console.error("Error saving program:", error);
@@ -392,6 +397,8 @@ const AdminPanel = () => {
                                 "Failed to save program. Please try again.";
             setError(errorMessage);
             setTimeout(() => setError(""), 3000);
+            setActiveTab("programs");
+            navigate("/admin/panel/programs");
         }
     };
 
@@ -478,7 +485,6 @@ const AdminPanel = () => {
     const currentPledges = filterData(pledges).slice(indexOfFirstItem, indexOfLastItem);
     const currentCountries = filterData(countries).slice(indexOfFirstItem, indexOfLastItem);
     const currentStates = filterData(states).slice(indexOfFirstItem, indexOfLastItem);
-
 
     const goToHomepage = () => navigate("/");
     const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -723,11 +729,19 @@ const AdminPanel = () => {
                     currency: "INR",
                     currencySymbol: "₹"
                 });
+                setActiveTab("countries");
+                navigate("/admin/panel/countries");
+            } else {
+                setError(response.data.message || "Failed to save country. Please try again.");
+                setActiveTab("countries");
+                navigate("/admin/panel/countries");
             }
         } catch (error) {
             console.error("Error saving country:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save country. Please try again.");
             setTimeout(() => setError(""), 3000);
+            setActiveTab("countries");
+            navigate("/admin/panel/countries");
         }
     };
 
@@ -788,11 +802,19 @@ const AdminPanel = () => {
                     code: "",
                     country: ""
                 });
+                setActiveTab("states");
+                navigate("/admin/panel/states");
+            } else {
+                setError(response.data.message || "Failed to save state. Please try again.");
+                setActiveTab("states");
+                navigate("/admin/panel/states");
             }
         } catch (error) {
             console.error("Error saving state:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save state. Please try again.");
             setTimeout(() => setError(""), 3000);
+            setActiveTab("states");
+            navigate("/admin/panel/states");
         }
     };
 
@@ -866,11 +888,19 @@ const AdminPanel = () => {
                     state: "",
                     message: ""
                 });
+                setActiveTab("volunteers");
+                navigate("/admin/panel/volunteers");
+            } else {
+                setError(response.data.message || "Failed to save volunteer. Please try again.");
+                setActiveTab("volunteers");
+                navigate("/admin/panel/volunteers");
             }
         } catch (error) {
             console.error("Error saving volunteer:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save volunteer. Please try again.");
             setTimeout(() => setError(""), 3000);
+            setActiveTab("volunteers");
+            navigate("/admin/panel/volunteers");
         }
     };
 
