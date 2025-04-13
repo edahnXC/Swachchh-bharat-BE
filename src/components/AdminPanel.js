@@ -730,18 +730,18 @@ const AdminPanel = () => {
                     currencySymbol: "₹"
                 });
                 setActiveTab("countries");
-                navigate("/admin/panel/countries");
+                navigate("/admin/countries");
             } else {
                 setError(response.data.message || "Failed to save country. Please try again.");
                 setActiveTab("countries");
-                navigate("/admin/panel/countries");
+                navigate("/admin/countries");
             }
         } catch (error) {
             console.error("Error saving country:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save country. Please try again.");
             setTimeout(() => setError(""), 3000);
             setActiveTab("countries");
-            navigate("/admin/panel/countries");
+            navigate("/admin/countries");
         }
     };
 
@@ -803,18 +803,18 @@ const AdminPanel = () => {
                     country: ""
                 });
                 setActiveTab("states");
-                navigate("/admin/panel/states");
+                navigate("/admin/states");
             } else {
                 setError(response.data.message || "Failed to save state. Please try again.");
                 setActiveTab("states");
-                navigate("/admin/panel/states");
+                navigate("/admin/states");
             }
         } catch (error) {
             console.error("Error saving state:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save state. Please try again.");
             setTimeout(() => setError(""), 3000);
             setActiveTab("states");
-            navigate("/admin/panel/states");
+            navigate("/admin/states");
         }
     };
 
@@ -889,18 +889,18 @@ const AdminPanel = () => {
                     message: ""
                 });
                 setActiveTab("volunteers");
-                navigate("/admin/panel/volunteers");
+                navigate("/admin/volunteers");
             } else {
                 setError(response.data.message || "Failed to save volunteer. Please try again.");
                 setActiveTab("volunteers");
-                navigate("/admin/panel/volunteers");
+                navigate("/admin/volunteers");
             }
         } catch (error) {
             console.error("Error saving volunteer:", error.response?.data || error.message);
             setError(error.response?.data?.message || "Failed to save volunteer. Please try again.");
             setTimeout(() => setError(""), 3000);
             setActiveTab("volunteers");
-            navigate("/admin/panel/volunteers");
+            navigate("/admin/volunteers");
         }
     };
 
